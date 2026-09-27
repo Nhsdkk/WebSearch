@@ -1,0 +1,43 @@
+application:
+  host: "localhost"
+  port: 7000
+
+database:
+  host: "localhost"
+  port: 5432
+  username: "postgres"
+  password: "postgres"
+  database: "robot_db"
+  
+mongo_db_config:
+  host: "localhost"
+  port: 27017
+  username: "user"
+  password: "pass"
+  json_data_database_name: "processed_content_db"
+  raw_data_database_name: "raw_html_content_db"
+  
+global_sitemap_processing_job_config:
+  fail_timeout_seconds: 20
+  success_timeout_seconds: 1
+  batch_size: 20
+  
+local_sitemap_processing_job_config:
+  fail_timeout_seconds: 20
+  success_timeout_seconds: 1
+  batch_size: 20
+  
+outdated_source_processing_scheduler_config:
+  fail_timeout_seconds: 20
+  success_timeout_seconds: 1
+  batch_size: 20
+  
+outdated_page_processing_scheduler_config:
+  fail_timeout_seconds: 20
+  success_timeout_seconds: 1
+  batch_size: 20
+  
+page_processing_job_config:
+  fail_timeout_seconds: 20
+  success_timeout_seconds: 1
+  batch_size: 20
