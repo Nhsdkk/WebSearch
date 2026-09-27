@@ -48,15 +48,19 @@ class BackgroundWorkerBase(LogProducer, Thread, ABC):
     def status(self) -> WorkerStatus:
         return self._status.value
 
+    @status.setter
+    def status(self, value: WorkerStatus):
+        self._status.value = value
+
     @abstractmethod
     def do_work(self) -> bool:
         pass
 
     def start(self) -> None:
-        if self._status.value is WorkerStatus.Working:
+        if self.status is WorkerStatus.Working:
             raise InvalidOperation("can't start already started worker")
 
-        self._status.value = WorkerStatus.Working
+        self.status = WorkerStatus.Working
         super().start()
 
     def run(self) -> None:
@@ -65,8 +69,8 @@ class BackgroundWorkerBase(LogProducer, Thread, ABC):
             self._id,
             extra=self._get_worker_info())
 
-        while self._status.value != WorkerStatus.Terminated:
-            self._logger.info("Status [%s]", self._status.value)
+        while self.status != WorkerStatus.Terminated:
+            self._logger.info("Status [%s]", self.status)
             try:
                 self._logger.info(
                     "Starting to execute iteration on worker with id = [%s]",
@@ -113,7 +117,7 @@ class BackgroundWorkerBase(LogProducer, Thread, ABC):
     def _get_worker_info(self) -> dict[str, Any]:
         return {
             "id": self._id,
-            "terminated": self._status.value,
+            "terminated": self.status,
             "success_timeout": self._base_job_config.success_timeout_seconds,
             "fail_timeout": self._base_job_config.fail_timeout_seconds,
         }
@@ -153,10 +157,10 @@ class BackgroundWorkerBase(LogProducer, Thread, ABC):
         )
 
     def terminate(self) -> None:
-        if self._status.value is not WorkerStatus.Working:
+        if self.status is not WorkerStatus.Working:
             raise InvalidOperation("can't stop not working worker")
 
-        self._status.value = WorkerStatus.Terminated
+        self.status = WorkerStatus.Terminated
 
     def __del__(self) -> None:
         self._logger.info(

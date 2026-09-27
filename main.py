@@ -55,6 +55,7 @@ class Application(LogProducer):
                     "Exception occurred while running the app",
                     exc_info=e)
             finally:
+                self.__dispose()
                 self._logger.info("Successfully disposed all of the application resources")
 
         app =  FastAPI(lifespan=lifespan)
@@ -68,6 +69,14 @@ class Application(LogProducer):
         )
         
         return Server(uvicorn_config)
+    
+    @inject
+    def __dispose(
+        self,
+        worker_manager: WorkerManager = Provide[ApplicationDiContainer.worker_manager]
+    ) -> None:
+        worker_manager.dispose()
+        
 
     @inject
     async def run(

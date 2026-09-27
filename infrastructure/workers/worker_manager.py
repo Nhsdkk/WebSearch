@@ -22,7 +22,7 @@ class WorkerManager(LogProducer):
         self._lock.acquire(blocking=True)
 
         for worker in self._workers:
-            if worker.status.value is not WorkerStatus.Working:
+            if worker.status is not WorkerStatus.Working:
                 continue
             
             worker.terminate()
