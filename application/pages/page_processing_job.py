@@ -34,7 +34,7 @@ class PageProcessingJob(BackgroundWorkerBase):
     __db: PsqlDatabase
     __page_processors: list[PageProcessor]
     
-    __content_database: MongoJsonDatabase[ProcessedPage]
+    __content_database: MongoJsonDatabase[dict]
     __raw_content_database: MongoRawDataDatabase
     
     @inject
@@ -43,7 +43,7 @@ class PageProcessingJob(BackgroundWorkerBase):
         job_config: PageProcessingJobConfig = Provide[PageProcessingJobConfigProvider.page_processing_job_config],
         database: PsqlDatabase = Provide[InfrastructureDiContainer.database],
         page_processors: list[PageProcessor] = Provide[PageProcessorsDiContainer.providers],
-        content_database: MongoJsonDatabase = Provide[InfrastructureDiContainer.mongo_json_db],
+        content_database: MongoJsonDatabase[dict] = Provide[InfrastructureDiContainer.mongo_json_db],
         raw_content_database: MongoRawDataDatabase = Provide[InfrastructureDiContainer.mongo_raw_data_db]):
         super().__init__(job_config)
         
@@ -120,12 +120,13 @@ class PageProcessingJob(BackgroundWorkerBase):
                 page.url
             )
 
-            collection = self.__content_database.db.get_collection("page_content")
+            collection = self.__content_database.db.get_collection(ProcessedPage.COLLECTION_NAME)
             
             page_data = ProcessedPage(
                 page_id=str(page.id),
                 title=processed_page.title,
-                text_content=processed_page.text_content
+                text_content=processed_page.text_content,
+                processed_at=reference_time,
             )
 
             collection.replace_one({ "page_id": page_data.page_id }, page_data.to_mongo_db(), upsert=True)

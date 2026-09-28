@@ -136,7 +136,7 @@ class GlobalSitemapProcessingJob(BackgroundWorkerBase):
             'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:156.0) Gecko/20100101 Firefox/156.0'
         }
 
-        sitemap_response = requests.get(url, headers)
+        sitemap_response = requests.get(url, headers=headers)
         if sitemap_response.status_code > 200:
             self._log(
                 LogLevel.ERROR,

@@ -1,6 +1,6 @@
 application:
   host: "localhost"
-  port: 7000
+  port: 8080
 
 database:
   host: "localhost"
@@ -40,4 +40,4 @@ outdated_page_processing_scheduler_config:
 page_processing_job_config:
   fail_timeout_seconds: 20
   success_timeout_seconds: 1
-  batch_size: 20
+  batch_size: 5

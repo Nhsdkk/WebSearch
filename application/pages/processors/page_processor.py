@@ -45,6 +45,9 @@ class PageProcessor(LogProducer):
 
             return None
         
+        if response.status_code >= 300:
+            raise Exception(f"Failed to retrieve page {page.url} content as server returned status code {response.status_code}")
+        
         return BeautifulSoup(response.content, "html.parser")
         
         

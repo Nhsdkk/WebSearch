@@ -86,7 +86,7 @@ class BackgroundWorkerBase(LogProducer, Thread, ABC):
                         self._id,
                         self._base_job_config.fail_timeout_seconds,
                         extra=self._get_iteration_info(result))
-                    time.sleep(self._base_job_config.fail_timeout_seconds)
+                    self._stop_event.wait(self._base_job_config.fail_timeout_seconds)
                     continue
 
                 self._logger.info(

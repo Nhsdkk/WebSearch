@@ -33,7 +33,7 @@ class OutdatedSourceProcessingScheduler(BackgroundWorkerBase):
         self,
         job_config: OutdatedSourceProcessingSchedulerConfig = Provide[OutdatedSourceProcessingSchedulerConfigProvider.outdated_source_processing_scheduler_config],
         database: PsqlDatabase = Provide[InfrastructureDiContainer.database]):
-        super().__init__()
+        super().__init__(job_config)
         
         self.__batch_size = job_config.batch_size
         self.__db = database

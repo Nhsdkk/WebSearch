@@ -29,7 +29,7 @@ class GetPageHandler:
     def __init__(
         self,
         database: PsqlDatabase,
-        content_database: MongoJsonDatabase[ProcessedPage],
+        content_database: MongoJsonDatabase[dict],
     ) -> None:
         self.__database = database
         self.__content_database = content_database
@@ -49,20 +49,19 @@ class GetPageHandler:
                 "last_task_processed_at": page.last_task_processed_at,
             }
 
-        retrieved_content = self.__content_database.db.get_collection(
-            "page_content"
-        ).find_one({"page_id": str(page_id)})
+        retrieved_content = self.__content_database.db.get_collection(ProcessedPage.COLLECTION_NAME).find_one({"page_id": str(page_id)})
+        processed_page = ProcessedPage.from_mongo_db(retrieved_content) if retrieved_content is not None else None
 
         return PageResponse(
             **page_data,
             title=(
-                retrieved_content.get("title")
-                if retrieved_content is not None
+                processed_page.title
+                if processed_page is not None
                 else None
             ),
             text_content=(
-                retrieved_content.get("text_content")
-                if retrieved_content is not None
+                processed_page.text_content
+                if processed_page is not None
                 else None
             ),
         )
