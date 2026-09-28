@@ -1,9 +1,8 @@
 from dataclasses import dataclass
 from datetime import datetime, UTC
-from typing import Sequence
-
 from dependency_injector.providers import Resource
 from dependency_injector.wiring import Provide, inject
+from sqlalchemy import Sequence
 from sqlalchemy.sql.expression import select
 
 from application.pages.pages_query_extensions import PagesQueryExtensions
@@ -61,43 +60,39 @@ class PageProcessingJob(BackgroundWorkerBase):
             self._log(
                 LogLevel.INFO,
                 "Processing another batch of pages (batch size = %d)...",
-                self.__batch_size
+                self.__batch_size,
             )
-            
+
             tasks: Sequence[PageProcessingTask] = db_session.scalars(
-                select(PageProcessingTask)
-                .join(PageProcessingTask.page)
-                .filter(PagesQueryExtensions.pending_task() | PagesQueryExtensions.retryable_task())
-                .order_by(PageProcessingTask.created_at.asc())
-                .with_for_update(skip_locked=True)
-                .limit(self.__batch_size)
+                (
+                    select(PageProcessingTask)
+                    .join(PageProcessingTask.page)
+                    .filter(PagesQueryExtensions.pending_task() | PagesQueryExtensions.retryable_task())
+                    .order_by(PageProcessingTask.created_at.asc())
+                    .with_for_update(of=PageProcessingTask, skip_locked=True)
+                    .limit(self.__batch_size)
+                )
             ).all()
-            
-            if len(tasks) == 0:
+
+            if not tasks:
                 self._log(LogLevel.WARNING, "No page processing tasks found, skipping this batch...")
                 return False
-            
-            for task in tasks:
-                task.status = ProcessingTaskStatus.RUNNING
-                
-            db_session.commit()
-            
-            now = datetime.now(UTC)
+
             for task in tasks:
                 try:
-                    self.__process_task(task, now)
+                    with db_session.begin_nested():
+                        self.__process_task(task, datetime.now(UTC))
                 except Exception as ex:
                     self._log(
                         LogLevel.EXCEPTION,
-                        "Exception occurred while processing page processing task with id %d",
+                        "Exception occurred while processing page processing task with id %s",
                         task.id,
-                        exc_info=ex
+                        exc_info=ex,
                     )
-
                     task.retry_processing(ex)
-                    
-                db_session.commit()
-                
+
+            db_session.commit()
+
             return all([task.status == ProcessingTaskStatus.COMPLETED for task in tasks])
     
     def __process_task(

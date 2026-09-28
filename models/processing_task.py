@@ -1,18 +1,12 @@
-import uuid
-from dataclasses import dataclass
-from datetime import datetime
 from enum import Enum
 from typing import Optional
 
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import Mapped, mapped_column
 
-from models.base_entity import BaseIdEntity
-
 
 class ProcessingTaskStatus(Enum):
     PENDING = 0
-    RUNNING = 1
     COMPLETED = 2
     FAILED = 3
     SKIPPED = 4
@@ -29,8 +23,7 @@ class ProcessingTask:
         return self.fail_count < MAX_FAIL_COUNT
     
     def retry_processing(self, exception: Exception):
-        retryable = self.status == ProcessingTaskStatus.RUNNING or (self.status == ProcessingTaskStatus.FAILED and self.retryable)
-        if not retryable:
+        if not self._can_process():
             raise Exception("Cannot retry processing task.")    
         
         self.status = ProcessingTaskStatus.FAILED
@@ -38,14 +31,17 @@ class ProcessingTask:
         self.last_error = str(exception)
         
     def complete(self) -> None:
-        if self.status != ProcessingTaskStatus.RUNNING:
-            raise Exception("Cannot complete a task that is not running.")
+        if not self._can_process():
+            raise Exception("Cannot complete a task that is not pending or retryable.")
         
         self.status = ProcessingTaskStatus.COMPLETED
         
     def skip(self, reason: str) -> None:
-        if self.status != ProcessingTaskStatus.RUNNING:
-            raise Exception("Cannot skip a task that is not running.")
+        if not self._can_process():
+            raise Exception("Cannot skip a task that is not pending or retryable.")
         
         self.status = ProcessingTaskStatus.SKIPPED
         self.last_error = reason
+
+    def _can_process(self) -> bool:
+        return self.status in (ProcessingTaskStatus.PENDING, ProcessingTaskStatus.FAILED) and self.retryable

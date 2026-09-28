@@ -23,6 +23,7 @@ class WorkerManager(LogProducer):
 
         for worker in self._workers:
             if worker.status is not WorkerStatus.Working:
+                self._logger.warning("Worker %s is not working. Skipping termination...", worker.name)
                 continue
             
             worker.terminate()

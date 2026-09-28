@@ -70,74 +70,49 @@ class LocalSitemapProcessingJob(BackgroundWorkerBase):
                 "Processing next batch of local sitemaps (batch size = %d)",
                 self._batch_size,
             )
-            
             tasks: Sequence[SitemapProcessingTask] = db_session.scalars(
-                select(SitemapProcessingTask)
-                .join(SitemapProcessingTask.source)
-                .filter(SitemapQueryExtensions.local_sitemap_process_task())
-                .filter(SitemapQueryExtensions.pending_sitemap_process_task() | SitemapQueryExtensions.retryable_sitemap_process_task())
-                .order_by(SitemapProcessingTask.created_at.asc())
-                .with_for_update(skip_locked=True)
-                .limit(self._batch_size)
-            ).all()
-            
-            if len(tasks) == 0:
-                self._log(
-                    LogLevel.WARNING,
-                    "No local sitemaps processing tasks found. Skipping processing...",
+                (
+                    select(SitemapProcessingTask)
+                    .join(SitemapProcessingTask.source)
+                    .filter(SitemapQueryExtensions.local_sitemap_process_task())
+                    .filter(SitemapQueryExtensions.pending_sitemap_process_task() | SitemapQueryExtensions.retryable_sitemap_process_task())
+                    .order_by(SitemapProcessingTask.created_at.asc())
+                    .with_for_update(of=SitemapProcessingTask, skip_locked=True)
+                    .limit(self._batch_size)
                 )
-                
+            ).all()
+
+            if not tasks:
+                self._log(LogLevel.WARNING, "No local sitemaps processing tasks found. Skipping processing...")
                 return False
-            
-            self._log(
-                LogLevel.INFO,
-                "Found tasks %s",
-                [task.id for task in tasks],
-            )
-            
-            for task in tasks:
-                task.status = ProcessingTaskStatus.RUNNING
-                
-            db_session.commit()
-            
+
             for task in tasks:
                 try:
-                    self._log(LogLevel.INFO,"Processing task: %s", task.id)
+                    with db_session.begin_nested():
+                        self._log(LogLevel.INFO, "Processing task: %s", task.id)
+                        current_page_count = task.source.page_count
 
-                    current_page_count: int = task.source.page_count
-
-                    if task.source.max_pages_count is not None and current_page_count > task.source.max_pages_count:
-                        self._log(
-                            LogLevel.WARNING,
-                            "Source %s has reached its max pages count %d (current count = %d). Skipping task %s...",
-                            task.source_id,
-                            task.source.max_pages_count,
-                            task.source.page_count,
-                            task.id,
-                        )
-
-                        task.skip(f"Source {task.source_id} has reached its max pages count. Limit: {task.source.max_pages_count}. Current: {task.source.page_count}")
-                        db_session.commit()
-                        continue
-                    
-                    page_infos = self.__retrieve_pages(task.sitemap_url)
-
-                    self.__create_pages(db_session, page_infos, task)
-                    
-                    task.status = ProcessingTaskStatus.COMPLETED
+                        if task.source.max_pages_count is not None and current_page_count >= task.source.max_pages_count:
+                            self._log(
+                                LogLevel.WARNING,
+                                "Source %s has reached its max pages count %d (current count = %d). Skipping task %s...",
+                                task.source_id,
+                                task.source.max_pages_count,
+                                current_page_count,
+                                task.id,
+                            )
+                            task.skip(f"Source {task.source_id} has reached its max pages count. Limit: {task.source.max_pages_count}. Current: {current_page_count}")
+                        else:
+                            page_infos = self.__retrieve_pages(task.sitemap_url)
+                            self.__create_pages(db_session, page_infos, task)
+                            task.complete()
                 except Exception as e:
-                    self._log(
-                        LogLevel.EXCEPTION,
-                        "Failed to process task %s",
-                        task.id,
-                        exc_info=e,
-                    )
-
+                    self._log(LogLevel.EXCEPTION, "Failed to process task %s", task.id, exc_info=e)
                     task.retry_processing(e)
 
-                db_session.commit()
+            db_session.commit()
 
-            return all([task.status == ProcessingTaskStatus.COMPLETED for task in tasks])
+            return all([task.status == ProcessingTaskStatus.COMPLETED or task.status == ProcessingTaskStatus.SKIPPED for task in tasks])
         
     def __create_pages(self, db_session: Session, page_infos: list[SitemapPageInfo], task: SitemapProcessingTask) -> None:
         page_urls = [page_info.url for page_info in page_infos]

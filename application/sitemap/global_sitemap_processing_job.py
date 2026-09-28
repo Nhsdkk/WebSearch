@@ -72,80 +72,61 @@ class GlobalSitemapProcessingJob(BackgroundWorkerBase):
         with self._database.create_session() as db_session:
             self._log(
                 LogLevel.INFO,
-                "Processing next batch of global sitemaps (batch size = %d)", 
-                self._batch_size)
-            
-            tasks : Sequence[SitemapProcessingTask] = db_session.scalars(
-                select(SitemapProcessingTask)
-                .join(SitemapProcessingTask.source)
-                .filter(SitemapQueryExtensions.global_sitemap_processing_task())
-                .filter(SitemapQueryExtensions.pending_sitemap_process_task() | SitemapQueryExtensions.retryable_sitemap_process_task())
-                .order_by(SitemapProcessingTask.created_at.asc())
-                .with_for_update(skip_locked=True)
-                .limit(self._batch_size)
+                "Processing next batch of global sitemaps (batch size = %d)",
+                self._batch_size,
+            )
+
+            tasks: Sequence[SitemapProcessingTask] = db_session.scalars(
+                (
+                    select(SitemapProcessingTask)
+                    .join(SitemapProcessingTask.source)
+                    .filter(SitemapQueryExtensions.global_sitemap_processing_task())
+                    .filter(SitemapQueryExtensions.pending_sitemap_process_task() | SitemapQueryExtensions.retryable_sitemap_process_task())
+                    .order_by(SitemapProcessingTask.created_at.asc())
+                    .with_for_update(of=SitemapProcessingTask, skip_locked=True)
+                    .limit(self._batch_size)
+                )
             ).all()
-            
-            if len(tasks) == 0:
+
+            if not tasks:
                 self._log(LogLevel.WARNING, "No global sitemaps processing tasks are active. Skipping processing...")
                 return False
-            
-            
-            self._log(LogLevel.INFO, "Found tasks %s",[task.id for task in tasks])
-            
-            for task in tasks:
-                task.status = ProcessingTaskStatus.RUNNING
-            
-            db_session.commit()
-            
+
             for task in tasks:
                 try:
-                    self._log(LogLevel.INFO, "Processing task %s",task.id)
-
-                    current_page_count: int = task.source.page_count
-
-                    if task.source.max_pages_count is not None and current_page_count > task.source.max_pages_count:
-                        self._log(
-                            LogLevel.WARNING,
-                            "Source %s has reached its max pages count %d (current count = %d). Skipping task %s...",
-                            task.source_id,
-                            task.source.max_pages_count,
-                            task.source.page_count,
-                            task.id,
-                        )
-
-                        task.skip(f"Source {task.source_id} has reached its max pages count. Limit: {task.source.max_pages_count}. Current: {task.source.page_count}")
-                        db_session.commit()
-                        continue
-                    
-                    local_sitemaps = self.get_sitemap(task.sitemap_url)
+                    with db_session.begin_nested():
+                        self._log(LogLevel.INFO, "Processing task %s", task.id)
+                        current_page_count = task.source.page_count
     
-                    changed_sitemaps = [sitemap for sitemap in local_sitemaps if sitemap.changed(task.source.last_task_processed_at)]
-                    
-                    self._log(
-                        LogLevel.INFO,
-                        "Found %d local changed sitemaps in url %s. Creating tasks and completing processing...",
-                        len(changed_sitemaps),
-                        task.source.url)
-                    
-                    local_sitemap_processing_tasks = [sitemap.to_processing_task(task.source) for sitemap in changed_sitemaps]
-                    
-                    db_session.add_all(local_sitemap_processing_tasks)
-                    
-                    task.complete()
-                    task.source.last_task_processed_at = datetime.now(UTC)
+                        if task.source.max_pages_count is not None and current_page_count >= task.source.max_pages_count:
+                            self._log(
+                                LogLevel.WARNING,
+                                "Source %s has reached its max pages count %d (current count = %d). Skipping task %s...",
+                                task.source_id,
+                                task.source.max_pages_count,
+                                current_page_count,
+                                task.id,
+                            )
+                            task.skip(f"Source {task.source_id} has reached its max pages count. Limit: {task.source.max_pages_count}. Current: {current_page_count}")
+                        else:
+                            local_sitemaps = self.get_sitemap(task.sitemap_url)
+                            changed_sitemaps = [sitemap for sitemap in local_sitemaps if sitemap.changed(task.source.last_task_processed_at)]
+                            self._log(
+                                LogLevel.INFO,
+                                "Found %d local changed sitemaps in url %s. Creating tasks and completing processing...",
+                                len(changed_sitemaps),
+                                task.source.url,
+                            )
+                            db_session.add_all([sitemap.to_processing_task(task.source) for sitemap in changed_sitemaps])
+                            task.complete()
+                            task.source.last_task_processed_at = datetime.now(UTC)
                 except Exception as e:
-                    self._log(
-                        LogLevel.EXCEPTION,
-                        "Failed to process task %s",
-                        task.id,
-                        exc_info=e
-                    )
-                    
+                    self._log(LogLevel.EXCEPTION, "Failed to process task %s", task.id, exc_info=e)
                     task.retry_processing(e)
+
+            db_session.commit()
                     
-                db_session.commit()
-    
-            return all([task.status == ProcessingTaskStatus.COMPLETED for task in tasks])
+            return all([task.status == ProcessingTaskStatus.COMPLETED or task.status == ProcessingTaskStatus.SKIPPED for task in tasks])
         
     
     def get_sitemap(self, url: str) -> list[LocalSitemapEntry]:
