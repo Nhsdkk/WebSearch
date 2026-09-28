@@ -3,7 +3,7 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from decimal import InvalidOperation
 from enum import Enum
-from threading import Thread
+from threading import Thread, Event
 from types import TracebackType
 from typing import Any, Optional, Mapping, Callable
 from uuid import UUID, uuid4
@@ -33,6 +33,7 @@ class BackgroundWorkerBase(LogProducer, Thread, ABC):
     _id: UUID
     _status: SharedObject[WorkerStatus]
     _base_job_config: JobConfigBase
+    _stop_event: Event
 
     def __init__(
             self,
@@ -43,6 +44,7 @@ class BackgroundWorkerBase(LogProducer, Thread, ABC):
         self._id = uuid4()
         self._base_job_config = job_config
         self._status = SharedObject(WorkerStatus.Created)
+        self._stop_event = Event()
 
     @property
     def status(self) -> WorkerStatus:
@@ -92,7 +94,7 @@ class BackgroundWorkerBase(LogProducer, Thread, ABC):
                     self._id,
                     self._base_job_config.success_timeout_seconds,
                     extra=self._get_iteration_info(result))
-                time.sleep(self._base_job_config.success_timeout_seconds)
+                self._stop_event.wait(self._base_job_config.success_timeout_seconds)
             except Exception as e:
                 self._logger.exception(
                     "Worker with id = [%s] finished the iteration with exception. Next iteration will be in %d seconds",
@@ -100,7 +102,12 @@ class BackgroundWorkerBase(LogProducer, Thread, ABC):
                     self._base_job_config.fail_timeout_seconds,
                     exc_info=e,
                     extra=self._get_iteration_info(success=False))
-                time.sleep(self._base_job_config.fail_timeout_seconds)
+                self._stop_event.wait(self._base_job_config.fail_timeout_seconds)
+
+        self._logger.info(
+            "Worker with id = [%s] terminating...",
+            self._id,
+            extra=self._get_worker_info())
 
     def _get_iteration_info(
             self,
@@ -161,6 +168,7 @@ class BackgroundWorkerBase(LogProducer, Thread, ABC):
             raise InvalidOperation("can't stop not working worker")
 
         self.status = WorkerStatus.Terminated
+        self._stop_event.set()
 
     def __del__(self) -> None:
         self._logger.info(

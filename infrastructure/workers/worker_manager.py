@@ -27,6 +27,8 @@ class WorkerManager(LogProducer):
                 continue
             
             worker.terminate()
+
+        for worker in self._workers:
             worker.join()
 
         self._workers = []
