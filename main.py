@@ -10,6 +10,18 @@ from fastapi import FastAPI
 from uvicorn import Server, Config
 
 from application.application_di_container import ApplicationDiContainer
+from application.pages.download_page_content_endpoint import (
+    DownloadPageContentHandler,
+    create_download_page_content_router,
+)
+from application.pages.get_page_endpoint import (
+    GetPageHandler,
+    create_get_page_router,
+)
+from application.sources.create_source_endpoint import (
+    CreateSourceHandler,
+    create_source_router,
+)
 from infrastructure import LogProducer, BaseDiContainer, WorkerManager
 from infrastructure.infrastructure_injector import InfrastructureDiContainer
 
@@ -44,7 +56,10 @@ class Application(LogProducer):
         app_di_container.wire(modules=[__name__], packages=[sitemap])
     
     @inject
-    def _create_app(self, config: ApplicationHostConfig = Provide[AppDiContainer.application_configuration]) -> Server:
+    def _create_app(
+        self,
+        config: ApplicationHostConfig = Provide[AppDiContainer.application_configuration],
+    ) -> Server:
         @asynccontextmanager
         async def lifespan(_: FastAPI) -> AsyncGenerator:
             try:
@@ -58,7 +73,8 @@ class Application(LogProducer):
                 self.__dispose()
                 self._logger.info("Successfully disposed all of the application resources")
 
-        app =  FastAPI(lifespan=lifespan)
+        app = FastAPI(lifespan=lifespan)
+        self._include_routers(app)
 
         uvicorn_config = Config(
             app=app,
@@ -69,6 +85,20 @@ class Application(LogProducer):
         )
         
         return Server(uvicorn_config)
+
+    @inject
+    def _include_routers(
+        self,
+        app: FastAPI,
+        create_source_handler: CreateSourceHandler = Provide[AppDiContainer.create_source_handler],
+        get_page_handler: GetPageHandler = Provide[AppDiContainer.get_page_handler],
+        download_page_content_handler: DownloadPageContentHandler = Provide[AppDiContainer.download_page_content_handler],
+    ) -> None:
+        app.include_router(create_source_router(create_source_handler))
+        app.include_router(create_get_page_router(get_page_handler))
+        app.include_router(
+            create_download_page_content_router(download_page_content_handler)
+        )
     
     @inject
     def __dispose(

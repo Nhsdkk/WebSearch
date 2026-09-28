@@ -10,12 +10,12 @@ class ApplicationDiContainer(SitemapDiContainer, SourcesDiContainer, PagesDiCont
     worker_manager = Singleton(
         WorkerManager,
         workers=List(
-            # SourcesDiContainer.outdated_source_processing_scheduler,
+            SourcesDiContainer.outdated_source_processing_scheduler,
 
-            # SitemapDiContainer.global_sitemap_processing_job,
-            # SitemapDiContainer.local_sitemap_processing_job,
+            SitemapDiContainer.global_sitemap_processing_job,
+            SitemapDiContainer.local_sitemap_processing_job,
 
-            # PagesDiContainer.outdated_page_processing_scheduler,
+            PagesDiContainer.outdated_page_processing_scheduler,
             PagesDiContainer.page_processing_job,
         )
     )

@@ -54,3 +54,10 @@ class MongoRawDataDatabase:
             self.db.delete(string_file_id)
 
         self.db.put(content, _id=str(file_id))
+
+    def get_file(self, file_id: uuid.UUID) -> bytes | None:
+        existing_file = self.db.find_one({"_id": str(file_id)})
+        if existing_file is None:
+            return None
+
+        return existing_file.read()
