@@ -8,8 +8,8 @@ from requests import Response
 @dataclass(frozen=True)
 class HttpClientConfig:
     user_agent: str
-    connect_timeout_seconds: float
-    read_timeout_seconds: float
+    connect_timeout_seconds: int
+    read_timeout_seconds: int
 
 
 class HttpClient:

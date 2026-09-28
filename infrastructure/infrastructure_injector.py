@@ -9,9 +9,9 @@ from infrastructure.postgres.database import PsqlConfig
 class InfrastructureDiContainer(BaseDiContainer):
     http_client_config = Resource(
         HttpClientConfig,
-        user_agent=BaseDiContainer.config.http_client_config.user_agent.as_str(),
-        connect_timeout_seconds=BaseDiContainer.config.http_client_config.connect_timeout_seconds.as_float(),
-        read_timeout_seconds=BaseDiContainer.config.http_client_config.read_timeout_seconds.as_float(),
+        user_agent=BaseDiContainer.config.http_client_config.user_agent,
+        connect_timeout_seconds=BaseDiContainer.config.http_client_config.connect_timeout_seconds.as_int(),
+        read_timeout_seconds=BaseDiContainer.config.http_client_config.read_timeout_seconds.as_int(),
     )
 
     http_client = Singleton(HttpClient, config=http_client_config)
