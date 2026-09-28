@@ -1,4 +1,4 @@
-﻿name: WebRobot infra
+name: webrobot-infra
 
 services:
   postgres:
@@ -61,3 +61,4 @@ volumes:
 networks:
   common:
     driver: bridge
+    name: webrobot_common

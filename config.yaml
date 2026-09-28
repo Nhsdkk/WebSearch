@@ -1,48 +1,48 @@
 application:
-  host: "localhost"
-  port: 8080
+  host: "${APPLICATION_HOST:localhost}"
+  port: ${APPLICATION_PORT:8080}
 
 http_client_config:
-  user_agent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:156.0) Gecko/20100101 Firefox/156.0"
-  connect_timeout_seconds: 5
-  read_timeout_seconds: 30
+  user_agent: "${HTTP_CLIENT_USER_AGENT:Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:156.0) Gecko/20100101 Firefox/156.0}"
+  connect_timeout_seconds: ${HTTP_CLIENT_CONNECT_TIMEOUT_SECONDS:5}
+  read_timeout_seconds: ${HTTP_CLIENT_READ_TIMEOUT_SECONDS:30}
 
 database:
-  host: "localhost"
-  port: 5432
-  username: "postgres"
-  password: "postgres"
-  database: "robot_db"
+  host: "${DATABASE_HOST:localhost}"
+  port: ${DATABASE_PORT:5432}
+  username: "${DATABASE_USERNAME:postgres}"
+  password: "${DATABASE_PASSWORD:postgres}"
+  database: "${DATABASE_NAME:robot_db}"
   
 mongo_db_config:
-  host: "localhost"
-  port: 27017
-  username: "user"
-  password: "pass"
-  json_data_database_name: "processed_content_db"
-  raw_data_database_name: "raw_html_content_db"
+  host: "${MONGO_DB_HOST:localhost}"
+  port: ${MONGO_DB_PORT:27017}
+  username: "${MONGO_DB_USERNAME:user}"
+  password: "${MONGO_DB_PASSWORD:pass}"
+  json_data_database_name: "${MONGO_DB_JSON_DATA_DATABASE_NAME:processed_content_db}"
+  raw_data_database_name: "${MONGO_DB_RAW_DATA_DATABASE_NAME:raw_html_content_db}"
   
 global_sitemap_processing_job_config:
-  fail_timeout_seconds: 20
-  success_timeout_seconds: 1
-  batch_size: 20
+  fail_timeout_seconds: ${GLOBAL_SITEMAP_PROCESSING_JOB_FAIL_TIMEOUT_SECONDS:20}
+  success_timeout_seconds: ${GLOBAL_SITEMAP_PROCESSING_JOB_SUCCESS_TIMEOUT_SECONDS:1}
+  batch_size: ${GLOBAL_SITEMAP_PROCESSING_JOB_BATCH_SIZE:20}
   
 local_sitemap_processing_job_config:
-  fail_timeout_seconds: 20
-  success_timeout_seconds: 1
-  batch_size: 20
+  fail_timeout_seconds: ${LOCAL_SITEMAP_PROCESSING_JOB_FAIL_TIMEOUT_SECONDS:20}
+  success_timeout_seconds: ${LOCAL_SITEMAP_PROCESSING_JOB_SUCCESS_TIMEOUT_SECONDS:1}
+  batch_size: ${LOCAL_SITEMAP_PROCESSING_JOB_BATCH_SIZE:20}
   
 outdated_source_processing_scheduler_config:
-  fail_timeout_seconds: 20
-  success_timeout_seconds: 1
-  batch_size: 20
+  fail_timeout_seconds: ${OUTDATED_SOURCE_PROCESSING_SCHEDULER_FAIL_TIMEOUT_SECONDS:20}
+  success_timeout_seconds: ${OUTDATED_SOURCE_PROCESSING_SCHEDULER_SUCCESS_TIMEOUT_SECONDS:1}
+  batch_size: ${OUTDATED_SOURCE_PROCESSING_SCHEDULER_BATCH_SIZE:20}
   
 outdated_page_processing_scheduler_config:
-  fail_timeout_seconds: 20
-  success_timeout_seconds: 1
-  batch_size: 20
+  fail_timeout_seconds: ${OUTDATED_PAGE_PROCESSING_SCHEDULER_FAIL_TIMEOUT_SECONDS:20}
+  success_timeout_seconds: ${OUTDATED_PAGE_PROCESSING_SCHEDULER_SUCCESS_TIMEOUT_SECONDS:1}
+  batch_size: ${OUTDATED_PAGE_PROCESSING_SCHEDULER_BATCH_SIZE:20}
   
 page_processing_job_config:
-  fail_timeout_seconds: 20
-  success_timeout_seconds: 1
-  batch_size: 5
+  fail_timeout_seconds: ${PAGE_PROCESSING_JOB_FAIL_TIMEOUT_SECONDS:20}
+  success_timeout_seconds: ${PAGE_PROCESSING_JOB_SUCCESS_TIMEOUT_SECONDS:1}
+  batch_size: ${PAGE_PROCESSING_JOB_BATCH_SIZE:5}

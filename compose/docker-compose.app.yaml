@@ -1,3 +1,59 @@
-name: WebRobot app
+name: webrobot-app
 
+include:
+  - ./docker-compose.infra.yaml
 
+services:
+  migrations:
+    build:
+      context: ..
+      dockerfile: compose/Dockerfile.migrations
+    environment:
+      DATABASE_URL: postgresql+psycopg2://postgres:postgres@postgres:5432/robot_db
+    networks:
+      - common
+
+  application:
+    build:
+      context: ..
+      dockerfile: compose/Dockerfile.app
+    environment:
+      APPLICATION_HOST: 0.0.0.0
+      APPLICATION_PORT: 8080
+      HTTP_CLIENT_USER_AGENT: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:156.0) Gecko/20100101 Firefox/156.0"
+      HTTP_CLIENT_CONNECT_TIMEOUT_SECONDS: 5
+      HTTP_CLIENT_READ_TIMEOUT_SECONDS: 30
+      DATABASE_HOST: postgres
+      DATABASE_PORT: 5432
+      DATABASE_USERNAME: postgres
+      DATABASE_PASSWORD: postgres
+      DATABASE_NAME: robot_db
+      MONGO_DB_HOST: mongodb
+      MONGO_DB_PORT: 27017
+      MONGO_DB_USERNAME: user
+      MONGO_DB_PASSWORD: pass
+      MONGO_DB_JSON_DATA_DATABASE_NAME: processed_content_db
+      MONGO_DB_RAW_DATA_DATABASE_NAME: raw_html_content_db
+      GLOBAL_SITEMAP_PROCESSING_JOB_FAIL_TIMEOUT_SECONDS: 20
+      GLOBAL_SITEMAP_PROCESSING_JOB_SUCCESS_TIMEOUT_SECONDS: 1
+      GLOBAL_SITEMAP_PROCESSING_JOB_BATCH_SIZE: 20
+      LOCAL_SITEMAP_PROCESSING_JOB_FAIL_TIMEOUT_SECONDS: 20
+      LOCAL_SITEMAP_PROCESSING_JOB_SUCCESS_TIMEOUT_SECONDS: 1
+      LOCAL_SITEMAP_PROCESSING_JOB_BATCH_SIZE: 20
+      OUTDATED_SOURCE_PROCESSING_SCHEDULER_FAIL_TIMEOUT_SECONDS: 20
+      OUTDATED_SOURCE_PROCESSING_SCHEDULER_SUCCESS_TIMEOUT_SECONDS: 1
+      OUTDATED_SOURCE_PROCESSING_SCHEDULER_BATCH_SIZE: 20
+      OUTDATED_PAGE_PROCESSING_SCHEDULER_FAIL_TIMEOUT_SECONDS: 20
+      OUTDATED_PAGE_PROCESSING_SCHEDULER_SUCCESS_TIMEOUT_SECONDS: 1
+      OUTDATED_PAGE_PROCESSING_SCHEDULER_BATCH_SIZE: 20
+      PAGE_PROCESSING_JOB_FAIL_TIMEOUT_SECONDS: 20
+      PAGE_PROCESSING_JOB_SUCCESS_TIMEOUT_SECONDS: 1
+      PAGE_PROCESSING_JOB_BATCH_SIZE: 5
+    ports:
+      - "8080:8080"
+    depends_on:
+      migrations:
+        condition: service_completed_successfully
+    stop_grace_period: 2m
+    networks:
+      - common
