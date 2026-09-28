@@ -15,6 +15,7 @@ from application.sitemap.query_extensions import SitemapQueryExtensions
 from infrastructure import BackgroundWorkerBase, PsqlDatabase, JobConfigBase, BaseDiContainer
 from infrastructure.infrastructure_injector import InfrastructureDiContainer
 from infrastructure.logging.log_producer import LogLevel
+from infrastructure.utils import UrlUtils
 from models import SitemapProcessingTask, ProcessingTaskStatus, Page, Source
 
 
@@ -26,7 +27,7 @@ class SitemapPageInfo:
     @classmethod
     def from_xml(cls, xml_data: Tag) -> Self:
         return cls(
-            url=xml_data.loc.text,
+            url=UrlUtils.normalize_url(xml_data.loc.text),
             last_modified_at=datetime.strptime(xml_data.lastmod.text, '%Y-%m-%dT%H:%M:%S%z'),
         )
     
@@ -115,15 +116,18 @@ class LocalSitemapProcessingJob(BackgroundWorkerBase):
             return all([task.status == ProcessingTaskStatus.COMPLETED or task.status == ProcessingTaskStatus.SKIPPED for task in tasks])
         
     def __create_pages(self, db_session: Session, page_infos: list[SitemapPageInfo], task: SitemapProcessingTask) -> None:
-        page_urls = [page_info.url for page_info in page_infos]
+        page_infos_by_url = {page_info.url: page_info for page_info in page_infos}
+        page_urls = list(page_infos_by_url)
         
-        existing_page_urls : Sequence[str] = db_session.scalars(
-            select(Page.url)
-            .filter(PagesQueryExtensions.by_urls(page_urls))
-        ).all()
+        existing_page_urls = set(
+            db_session.scalars(
+                select(Page.url)
+                .filter(PagesQueryExtensions.by_urls(page_urls))
+            ).all()
+        )
         
         nonexisting_pages = [
-            page for page in page_infos if page.url not in existing_page_urls
+            page for url, page in page_infos_by_url.items() if url not in existing_page_urls
         ]
         
         if len(nonexisting_pages) == 0:
