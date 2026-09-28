@@ -6,14 +6,16 @@ from infrastructure.infrastructure_injector import InfrastructureDiContainer
 
 
 class SitemapDiContainer(GlobalSitemapConfigProvider, InfrastructureDiContainer):
-    global_sitemap_processing_job : GlobalSitemapProcessingJob = Singleton(
+    global_sitemap_processing_job = Singleton(
         GlobalSitemapProcessingJob,
         job_config=GlobalSitemapConfigProvider.global_sitemap_processing_job_config,
         database=InfrastructureDiContainer.database,
+        http_client=InfrastructureDiContainer.http_client,
     )
     
-    local_sitemap_processing_job : LocalSitemapProcessingJob = Singleton(
+    local_sitemap_processing_job = Singleton(
         LocalSitemapProcessingJob,
         job_config=LocalSitemapConfigProvider.local_sitemap_processing_job_config,
         database=InfrastructureDiContainer.database,
+        http_client=InfrastructureDiContainer.http_client,
     )

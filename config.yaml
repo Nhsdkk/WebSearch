@@ -2,6 +2,11 @@ application:
   host: "localhost"
   port: 8080
 
+http_client_config:
+  user_agent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:156.0) Gecko/20100101 Firefox/156.0"
+  connect_timeout_seconds: 5
+  read_timeout_seconds: 30
+
 database:
   host: "localhost"
   port: 5432

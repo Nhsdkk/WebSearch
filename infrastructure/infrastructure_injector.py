@@ -2,10 +2,20 @@ from dependency_injector.providers import Singleton, Resource
 
 from infrastructure import PsqlDatabase
 from infrastructure.di.base_di_container import BaseDiContainer
+from infrastructure.http import HttpClient, HttpClientConfig
 from infrastructure.mongo import MongoDbConfig, MongoDbClient, MongoJsonDatabase, MongoRawDataDatabase
 from infrastructure.postgres.database import PsqlConfig
 
 class InfrastructureDiContainer(BaseDiContainer):
+    http_client_config = Resource(
+        HttpClientConfig,
+        user_agent=BaseDiContainer.config.http_client_config.user_agent.as_str(),
+        connect_timeout_seconds=BaseDiContainer.config.http_client_config.connect_timeout_seconds.as_float(),
+        read_timeout_seconds=BaseDiContainer.config.http_client_config.read_timeout_seconds.as_float(),
+    )
+
+    http_client = Singleton(HttpClient, config=http_client_config)
+
     db_config : Resource[PsqlConfig] = Resource(
         PsqlConfig,
         host=BaseDiContainer.config.database.host,

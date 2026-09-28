@@ -2,7 +2,6 @@ from dataclasses import dataclass
 from datetime import datetime, UTC
 from typing import Optional, Self
 
-import requests
 from bs4 import BeautifulSoup, Tag
 from dependency_injector.providers import Resource
 from dependency_injector.wiring import inject, Provide
@@ -11,6 +10,7 @@ from sqlalchemy import select, Sequence
 from application.sitemap.query_extensions import SitemapQueryExtensions
 from infrastructure import BackgroundWorkerBase, JobConfigBase, BaseDiContainer, PsqlDatabase
 from infrastructure.infrastructure_injector import InfrastructureDiContainer
+from infrastructure.http import HttpClient
 from infrastructure.logging.log_producer import LogLevel
 from models import SitemapProcessingTask, ProcessingTaskStatus, SitemapType
 from models.source import Source
@@ -57,15 +57,18 @@ class LocalSitemapEntry:
 class GlobalSitemapProcessingJob(BackgroundWorkerBase):
     _batch_size: int
     _database: PsqlDatabase
+    _http_client: HttpClient
     
     @inject
     def __init__(
             self,
             job_config: GlobalSitemapProcessingJobConfig = Provide[GlobalSitemapConfigProvider.global_sitemap_processing_job_config],
-            database: PsqlDatabase = Provide[InfrastructureDiContainer.database]):
+            database: PsqlDatabase = Provide[InfrastructureDiContainer.database],
+            http_client: HttpClient = Provide[InfrastructureDiContainer.http_client]):
         super().__init__(job_config)
 
         self._database = database
+        self._http_client = http_client
         self._batch_size = job_config.batch_size
 
     def do_work(self) -> bool:
@@ -132,11 +135,7 @@ class GlobalSitemapProcessingJob(BackgroundWorkerBase):
     def get_sitemap(self, url: str) -> list[LocalSitemapEntry]:
         self._log(LogLevel.INFO, "Processing sitemap for url %s",url)
 
-        headers = {
-            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:156.0) Gecko/20100101 Firefox/156.0'
-        }
-
-        sitemap_response = requests.get(url, headers=headers)
+        sitemap_response = self._http_client.get(url)
         if sitemap_response.status_code > 200:
             self._log(
                 LogLevel.ERROR,

@@ -4,10 +4,10 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Optional
 
-import requests
 from bs4 import BeautifulSoup
 
 from infrastructure import LogProducer
+from infrastructure.http import HttpClient
 from models import Page
 
 @dataclass
@@ -18,6 +18,10 @@ class ProcessedPageDto:
     full_page_content: BeautifulSoup
 
 class PageProcessor(LogProducer):
+    def __init__(self, http_client: HttpClient) -> None:
+        super().__init__()
+        self._http_client = http_client
+
     @abstractclassmethod
     def can_process(cls, page: Page) -> bool:
         pass
@@ -30,12 +34,9 @@ class PageProcessor(LogProducer):
         self._logger.info("Attempting to retrieve page %s content...", page.url)
         
         reference_time = datetime.strftime(page.last_task_processed_at,"%a %d %b %Y %H:%M:%S %z") if page.last_task_processed_at is not None else None
-        headers = {
-            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:156.0) Gecko/20100101 Firefox/156.0',
-            **({ 'If-Modified-Since':  reference_time } if page.last_task_processed_at is not None else {}), 
-        }
+        headers = {'If-Modified-Since': reference_time} if reference_time is not None else None
         
-        response = requests.get(page.url, headers=headers)
+        response = self._http_client.get(page.url, headers=headers)
         if response.status_code == 304:
             self._logger.warning(
                 "Page %s has not been modified since %s. Returning...",
