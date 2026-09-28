@@ -51,6 +51,7 @@ class OutdatedSourceProcessingScheduler(BackgroundWorkerBase):
                 select(Source)
                 .filter(SourceQueryExtensions.with_sitemap())
                 .filter(SourceQueryExtensions.outdated_sources(now))
+                .filter(SourceQueryExtensions.can_create_new_pages())
                 .order_by(Source.created_at.asc())
                 .limit(self.__batch_size)
             ).all()

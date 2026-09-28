@@ -73,7 +73,13 @@ class Application(LogProducer):
                 self.__dispose()
                 self._logger.info("Successfully disposed all of the application resources")
 
-        app = FastAPI(lifespan=lifespan)
+        app = FastAPI(
+            title="WebSearch API",
+            version="1.0.0",
+            lifespan=lifespan,
+            docs_url="/swagger",
+            openapi_url="/openapi.json",
+        )
         self._include_routers(app)
 
         uvicorn_config = Config(

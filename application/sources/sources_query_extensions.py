@@ -1,11 +1,11 @@
-from datetime import timedelta, datetime
+from datetime import datetime
 
 from sqlalchemy import ColumnElement
 from sqlalchemy.sql.expression import text
 from sqlalchemy.sql.operators import or_, and_
 
 from application.sitemap.query_extensions import SitemapQueryExtensions
-from models import Source, SitemapProcessingTask
+from models import Source
 
 
 class SourceQueryExtensions:
@@ -26,6 +26,13 @@ class SourceQueryExtensions:
                 Source.last_task_processed_at + Source.refetch_seconds * text("INTERVAL '1 second'") < reference_time
             ),
             ~SourceQueryExtensions.has_pending_task()
+        )
+    
+    @staticmethod
+    def can_create_new_pages() -> ColumnElement[bool]:
+        return or_(
+            Source.max_pages_count.is_(None),
+            Source.page_count < Source.max_pages_count
         )
     
     @staticmethod

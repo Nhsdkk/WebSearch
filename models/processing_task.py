@@ -15,6 +15,7 @@ class ProcessingTaskStatus(Enum):
     RUNNING = 1
     COMPLETED = 2
     FAILED = 3
+    SKIPPED = 4
 
 MAX_FAIL_COUNT = 5
 
@@ -41,3 +42,10 @@ class ProcessingTask:
             raise Exception("Cannot complete a task that is not running.")
         
         self.status = ProcessingTaskStatus.COMPLETED
+        
+    def skip(self, reason: str) -> None:
+        if self.status != ProcessingTaskStatus.RUNNING:
+            raise Exception("Cannot skip a task that is not running.")
+        
+        self.status = ProcessingTaskStatus.SKIPPED
+        self.last_error = reason

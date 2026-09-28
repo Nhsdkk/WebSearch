@@ -12,6 +12,7 @@ class CreateSourceRequest(BaseModel):
     url: HttpUrl
     refetch_seconds: int = Field(default=900, gt=0)
     global_sitemap_url: HttpUrl | None = None
+    max_pages_count: int | None = Field(default=None, gt=0)
 
 
 class CreateSourceResponse(BaseModel):
@@ -21,6 +22,8 @@ class CreateSourceResponse(BaseModel):
     url: str
     refetch_seconds: int
     global_sitemap_url: str | None
+    max_pages_count: int | None
+    page_count: int
     last_task_processed_at: datetime | None
     created_at: datetime
 
@@ -38,6 +41,7 @@ class CreateSourceHandler:
                 if request.global_sitemap_url is not None
                 else None
             ),
+            max_pages_count=request.max_pages_count,
         )
 
         with self.__database.create_session() as db_session:

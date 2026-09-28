@@ -103,10 +103,26 @@ class LocalSitemapProcessingJob(BackgroundWorkerBase):
             for task in tasks:
                 try:
                     self._log(LogLevel.INFO,"Processing task: %s", task.id)
+
+                    current_page_count: int = task.source.page_count
+
+                    if task.source.max_pages_count is not None and current_page_count > task.source.max_pages_count:
+                        self._log(
+                            LogLevel.WARNING,
+                            "Source %s has reached its max pages count %d (current count = %d). Skipping task %s...",
+                            task.source_id,
+                            task.source.max_pages_count,
+                            task.source.page_count,
+                            task.id,
+                        )
+
+                        task.skip(f"Source {task.source_id} has reached its max pages count. Limit: {task.source.max_pages_count}. Current: {task.source.page_count}")
+                        db_session.commit()
+                        continue
                     
                     page_infos = self.__retrieve_pages(task.sitemap_url)
-                    
-                    self.__create_tasks(db_session, page_infos, task)
+
+                    self.__create_pages(db_session, page_infos, task)
                     
                     task.status = ProcessingTaskStatus.COMPLETED
                 except Exception as e:
@@ -123,8 +139,7 @@ class LocalSitemapProcessingJob(BackgroundWorkerBase):
 
             return all([task.status == ProcessingTaskStatus.COMPLETED for task in tasks])
         
-        
-    def __create_tasks(self, db_session: Session, page_infos: list[SitemapPageInfo], task: SitemapProcessingTask) -> None:
+    def __create_pages(self, db_session: Session, page_infos: list[SitemapPageInfo], task: SitemapProcessingTask) -> None:
         page_urls = [page_info.url for page_info in page_infos]
         
         existing_page_urls : Sequence[str] = db_session.scalars(
@@ -154,6 +169,8 @@ class LocalSitemapProcessingJob(BackgroundWorkerBase):
         
         pages_to_add = [page_info.to_page(task.sitemap_url, task.source) for page_info in nonexisting_pages]
         db_session.add_all(pages_to_add)
+        
+        task.source.page_count += len(pages_to_add)
     
     def __retrieve_pages(self, sitemap_url: str) -> list[SitemapPageInfo]:
         self._log(LogLevel.INFO, "Processing sitemap for url %s",sitemap_url)
