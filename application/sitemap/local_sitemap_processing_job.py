@@ -22,13 +22,13 @@ from models import SitemapProcessingTask, ProcessingTaskStatus, Page, Source
 @dataclass
 class SitemapPageInfo:
     url: str
-    last_modified_at: datetime
+    # last_modified_at: datetime
 
     @classmethod
     def from_xml(cls, xml_data: Tag) -> Self:
         return cls(
             url=UrlUtils.normalize_url(xml_data.loc.text),
-            last_modified_at=datetime.strptime(xml_data.lastmod.text, '%Y-%m-%dT%H:%M:%S%z'),
+            # last_modified_at=datetime.strptime(xml_data.lastmod.text, '%Y-%m-%dT%H:%M:%S%z'),
         )
     
     def to_page(self, sitemap_url: str, source: Source) -> Page:

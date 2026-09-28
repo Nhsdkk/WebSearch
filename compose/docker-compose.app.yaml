@@ -5,15 +5,22 @@ include:
 
 services:
   migrations:
+    hostname: migrations
+    pull_policy: always
     build:
       context: ..
       dockerfile: compose/Dockerfile.migrations
     environment:
       DATABASE_URL: postgresql+psycopg2://postgres:postgres@postgres:5432/robot_db
+    depends_on:
+        postgres:
+          condition: service_healthy
     networks:
       - common
 
   application:
+    hostname: application
+    pull_policy: always
     build:
       context: ..
       dockerfile: compose/Dockerfile.app
@@ -52,6 +59,10 @@ services:
     ports:
       - "8080:8080"
     depends_on:
+      postgres:
+        condition: service_healthy
+      mongodb:
+        condition: service_healthy
       migrations:
         condition: service_completed_successfully
     stop_grace_period: 2m
