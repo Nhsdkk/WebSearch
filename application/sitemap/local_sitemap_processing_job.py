@@ -11,6 +11,7 @@ from sqlalchemy.sql.expression import select
 
 from application.pages.pages_query_extensions import PagesQueryExtensions
 from application.sitemap.query_extensions import SitemapQueryExtensions
+from application.sitemap.url_filters import UrlFilter, UrlFiltersDiContainer
 from infrastructure import BackgroundWorkerBase, PsqlDatabase, JobConfigBase, BaseDiContainer
 from infrastructure.infrastructure_injector import InfrastructureDiContainer
 from infrastructure.http import HttpClient
@@ -22,13 +23,11 @@ from models import SitemapProcessingTask, ProcessingTaskStatus, Page, Source
 @dataclass
 class SitemapPageInfo:
     url: str
-    # last_modified_at: datetime
 
     @classmethod
     def from_xml(cls, xml_data: Tag) -> Self:
         return cls(
-            url=UrlUtils.normalize_url(xml_data.loc.text),
-            # last_modified_at=datetime.strptime(xml_data.lastmod.text, '%Y-%m-%dT%H:%M:%S%z'),
+            url=UrlUtils.normalize_url(xml_data.loc.text)
         )
     
     def to_page(self, sitemap_url: str, source: Source) -> Page:
@@ -55,17 +54,20 @@ class LocalSitemapProcessingJob(BackgroundWorkerBase):
     _batch_size: int
     _database: PsqlDatabase
     _http_client: HttpClient
+    _url_filters: list[UrlFilter]
     
     def __init__(
-            self,
-            job_config: LocalSitemapProcessingJobConfig = Provide[LocalSitemapConfigProvider.local_sitemap_processing_job_config],
-            database: PsqlDatabase = Provide[InfrastructureDiContainer.database],
-            http_client: HttpClient = Provide[InfrastructureDiContainer.http_client]):
+        self,
+        job_config: LocalSitemapProcessingJobConfig = Provide[LocalSitemapConfigProvider.local_sitemap_processing_job_config],
+        database: PsqlDatabase = Provide[InfrastructureDiContainer.database],
+        http_client: HttpClient = Provide[InfrastructureDiContainer.http_client],
+        url_filters: list[UrlFilter] = Provide[UrlFiltersDiContainer.url_filters]):
         super().__init__(job_config)
         
         self._database = database
         self._http_client = http_client
         self._batch_size = job_config.batch_size
+        self._url_filters = url_filters
 
     def do_work(self) -> bool:
         with self._database.create_session() as db_session:
@@ -74,6 +76,7 @@ class LocalSitemapProcessingJob(BackgroundWorkerBase):
                 "Processing next batch of local sitemaps (batch size = %d)",
                 self._batch_size,
             )
+
             tasks: Sequence[SitemapProcessingTask] = db_session.scalars(
                 (
                     select(SitemapProcessingTask)
@@ -173,6 +176,30 @@ class LocalSitemapProcessingJob(BackgroundWorkerBase):
         page_infos = []
 
         for xml_entry in xml_content.find_all("url"):
+            page_info = SitemapPageInfo.from_xml(xml_entry)
+            
+            applicable_url_filters = [  
+                url_filter for url_filter in self._url_filters if url_filter.can_apply(page_info.url)
+            ]
+            
+            self._log(
+                LogLevel.INFO,
+                "Found %d applicable url filters for page url %s",
+                len(applicable_url_filters),
+                page_info.url
+            )
+            
+            url_allowed = all(url_filter.filter(page_info.url) for url_filter in applicable_url_filters)
+            
+            if not url_allowed:
+                self._log(
+                    LogLevel.INFO,
+                    "Page url %s is filtered out by applicable url filters. Skipping...",
+                    page_info.url
+                )
+                
+                continue
+            
             page_infos.append(SitemapPageInfo.from_xml(xml_entry))
 
         self._log(
