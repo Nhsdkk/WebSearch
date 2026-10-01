@@ -27,7 +27,7 @@ class RiaPageProcessor(PageProcessor):
         content_block = html_content.find_all("div", attrs={"class": "article__body js-mediator-article mia-analytics"})[0]
 
         div_content_blocks = content_block.find_all("div", attrs={"class": ["article__block"]})
-        text_content_blocks = [block for block in div_content_blocks if block["data-type"] == "text" or block["data-type"] == "quote"]
+        text_content_blocks = [block for block in div_content_blocks if 'data-type' in block and block["data-type"] == "text" or block["data-type"] == "quote"]
 
         text_blocks = [block.text for block in text_content_blocks]
         return "\n".join(text_blocks)

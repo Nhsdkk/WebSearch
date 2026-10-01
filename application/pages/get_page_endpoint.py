@@ -19,6 +19,8 @@ class PageResponse(BaseModel):
     last_task_processed_at: datetime | None
     title: str | None
     text_content: str | None
+    raw_size_in_kbytes: int | None
+    content_size_in_kbytes: int | None
 
 
 class PageNotFoundError(Exception):
@@ -47,6 +49,8 @@ class GetPageHandler:
                 "sitemap_url": page.sitemap_url,
                 "created_at": page.created_at,
                 "last_task_processed_at": page.last_task_processed_at,
+                "raw_page_size_in_kbytes": page.raw_size_in_kbytes,
+                "content_size_in_kbytes": page.content_size_in_kbytes,
             }
 
         retrieved_content = self.__content_database.db.get_collection(ProcessedPage.COLLECTION_NAME).find_one({"page_id": str(page_id)})
