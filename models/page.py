@@ -19,4 +19,7 @@ class Page(BaseIdEntity):
     source: Mapped[Source] = relationship()
     source_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("sources.id", ondelete="CASCADE"), nullable=False)
     
+    content_size_in_kbytes: Mapped[Optional[int]] = mapped_column(nullable=True)
+    raw_size_in_kbytes: Mapped[Optional[int]] = mapped_column(nullable=True)
+    
     processing_tasks: Mapped[List["PageProcessingTask"]] = relationship()

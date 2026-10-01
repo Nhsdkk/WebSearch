@@ -89,6 +89,7 @@ class PageProcessingJob(BackgroundWorkerBase):
                         task.id,
                         exc_info=ex,
                     )
+
                     task.retry_processing(ex)
 
             db_session.commit()
@@ -112,28 +113,42 @@ class PageProcessingJob(BackgroundWorkerBase):
         processor = next((p for p in self.__page_processors if p.can_process(page)))
         processed_page = processor.try_process_page(page)
         
-        if processed_page is not None:
+        if processed_page is None:
             self._log(
-                LogLevel.INFO,
-                "Successfully retrieved new page content for page with id %d and url '%s', saving to database...",
+                LogLevel.ERROR,
+                "Failed to process page with id %d and url '%s' using processor %s...",
                 page.id,
-                page.url
+                page.url,
+                processor.__class__.__name__
             )
-
-            collection = self.__content_database.db.get_collection(ProcessedPage.COLLECTION_NAME)
             
-            page_data = ProcessedPage(
-                page_id=str(page.id),
-                title=processed_page.title,
-                text_content=processed_page.text_content,
-                processed_at=reference_time,
-            )
+            raise Exception(f"Failed to process page with id {page.id} and url '{page.url}' using processor {processor.__class__.__name__}")
 
-            collection.replace_one({ "page_id": page_data.page_id }, page_data.to_mongo_db(), upsert=True)
 
-            file_content = bytes(processed_page.full_page_content.prettify(), encoding="utf-8")
-            self.__raw_content_database.upsert_file(processed_page.page_id, file_content)
-    
+        self._log(
+            LogLevel.INFO,
+            "Successfully retrieved new page content for page with id %d and url '%s', saving to database...",
+            page.id,
+            page.url
+        )
+
+        collection = self.__content_database.db.get_collection(ProcessedPage.COLLECTION_NAME)
+
+        page_data = ProcessedPage(
+            page_id=str(page.id),
+            title=processed_page.title,
+            text_content=processed_page.text_content,
+            processed_at=reference_time,
+        )
+
+        collection.replace_one({ "page_id": page_data.page_id }, page_data.to_mongo_db(), upsert=True)
+
+        file_content = bytes(processed_page.full_page_content.prettify(), encoding="utf-8")
+        self.__raw_content_database.upsert_file(processed_page.page_id, file_content)
+
+        task.page.content_size_in_kbytes = processed_page.content_size_in_kbytes
+        task.page.raw_size_in_kbytes = len(file_content) // 1024
+
         task.complete()
         task.page.last_task_processed_at = reference_time
         

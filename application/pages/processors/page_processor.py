@@ -16,6 +16,10 @@ class ProcessedPageDto:
     title: str
     text_content: str
     full_page_content: BeautifulSoup
+    
+    @property
+    def content_size_in_kbytes(self) -> int:
+        return len(self.text_content.encode('utf-8')) // 1024
 
 class PageProcessor(LogProducer):
     def __init__(self, http_client: HttpClient) -> None:
