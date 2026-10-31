@@ -2,6 +2,10 @@ application:
   host: "${APPLICATION_HOST:localhost}"
   port: ${APPLICATION_PORT:8080}
 
+basic_auth_config:
+  username: "username"
+  password: "password"
+
 http_client_config:
   user_agent: "${HTTP_CLIENT_USER_AGENT:Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:156.0) Gecko/20100101 Firefox/156.0}"
   connect_timeout_seconds: ${HTTP_CLIENT_CONNECT_TIMEOUT_SECONDS:5}

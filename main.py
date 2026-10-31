@@ -10,6 +10,7 @@ from fastapi import FastAPI
 from uvicorn import Server, Config
 
 from application.application_di_container import ApplicationDiContainer
+from application.auth import BasicAuth, add_basic_auth
 from application.pages.download_page_content_endpoint import (
     DownloadPageContentHandler,
     create_download_page_content_router,
@@ -59,6 +60,7 @@ class Application(LogProducer):
     def _create_app(
         self,
         config: ApplicationHostConfig = Provide[AppDiContainer.application_configuration],
+        basic_auth: BasicAuth = Provide[AppDiContainer.basic_auth],
     ) -> Server:
         @asynccontextmanager
         async def lifespan(_: FastAPI) -> AsyncGenerator:
@@ -80,6 +82,7 @@ class Application(LogProducer):
             docs_url="/swagger",
             openapi_url="/openapi.json",
         )
+        add_basic_auth(app, basic_auth)
         self._include_routers(app)
 
         uvicorn_config = Config(
