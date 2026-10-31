@@ -21,6 +21,8 @@ services:
       retries: 5
     ports:
       - "7432:5432"
+    volumes:
+      - ./data/postgres:/var/lib/postgresql
     networks:
       - common
   
@@ -37,11 +39,11 @@ services:
       MONGODB_INITDB_ROOT_USERNAME: ${MONGO_DB_USERNAME}
       MONGODB_INITDB_ROOT_PASSWORD: ${MONGO_DB_PASSWORD}
     ports:
-      - 27017:27017
+      - "27017:27017"
     volumes:
-      - db:/data/db
-      - configdb:/data/configdb
-      - mongot:/data/mongot
+      - ./data/mongodb/db:/data/db
+      - ./data/mongodb/configdb:/data/configdb
+      - ./data/mongodb/mongot:/data/mongot
     networks:
       - common
 
@@ -69,11 +71,6 @@ services:
       - "8081:8081"
     networks:
       - common
-
-volumes:
-  db:
-  configdb:
-  mongot:
 
 networks:
   common:
