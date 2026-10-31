@@ -4,9 +4,10 @@ services:
   postgres:
     hostname: postgres
     image: postgres:18-alpine
+    env_file: "./.env"
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+      POSTGRES_USER: ${DATABASE_USERNAME}
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD}
       POSTGRES_DB: robot_db
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}" ]
@@ -21,13 +22,13 @@ services:
   mongodb:
     image: mongodb/mongodb-atlas-local
     hostname: mongodb
+    env_file: "./.env"
     environment:
-      - MONGODB_INITDB_ROOT_USERNAME=user
-      - MONGODB_INITDB_ROOT_PASSWORD=pass
+      MONGODB_INITDB_ROOT_USERNAME: ${MONGO_DB_USERNAME}
+      MONGODB_INITDB_ROOT_PASSWORD: ${MONGO_DB_PASSWORD}
     ports:
       - 27017:27017
     volumes:
-      - ./init:/docker-entrypoint-initdb.d
       - db:/data/db
       - configdb:/data/configdb
       - mongot:/data/mongot
@@ -40,14 +41,15 @@ services:
     restart: unless-stopped
     depends_on:
       - mongodb
+    env_file: "./.env"
     environment:
       # MongoDB connection settings
       ME_CONFIG_MONGODB_ENABLE_ADMIN: "true"
       ME_CONFIG_MONGODB_URL: mongodb://user:pass@mongodb:27017/
       # Basic auth protects the web UI from unauthorized access
       ME_CONFIG_BASICAUTH_ENABLED: "true"
-      ME_CONFIG_BASICAUTH_USERNAME: user
-      ME_CONFIG_BASICAUTH_PASSWORD: pass
+      ME_CONFIG_BASICAUTH_USERNAME: ${MONGO_DB_USERNAME}
+      ME_CONFIG_BASICAUTH_PASSWORD: ${MONGO_DB_PASSWORD}
     ports:
       - "8081:8081"
     networks:
