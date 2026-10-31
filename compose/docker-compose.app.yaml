@@ -8,6 +8,11 @@ services:
     hostname: migrations
     pull_policy: always
     image: ghcr.io/nhsdkk/websearch-migrations:latest
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 512M
     environment:
       DATABASE_URL: postgresql+psycopg2://postgres:postgres@postgres:5432/robot_db
     depends_on:
@@ -21,6 +26,14 @@ services:
     pull_policy: always
     image: ghcr.io/nhsdkk/websearch-application:latest
     env_file: "./.env"
+    deploy:
+      mode: replicated
+      replicas: 2
+      endpoint_mode: vip
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 1G
     environment:
       APPLICATION_HOST: 0.0.0.0
       APPLICATION_PORT: 8080
@@ -58,6 +71,6 @@ services:
         condition: service_healthy
       migrations:
         condition: service_completed_successfully
-    stop_grace_period: 2m
+    stop_grace_period: 1m
     networks:
       - common

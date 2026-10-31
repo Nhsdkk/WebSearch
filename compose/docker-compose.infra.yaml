@@ -4,6 +4,11 @@ services:
   postgres:
     hostname: postgres
     image: postgres:18-alpine
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 5G
     env_file: "./.env"
     environment:
       POSTGRES_USER: ${DATABASE_USERNAME}
@@ -22,6 +27,11 @@ services:
   mongodb:
     image: mongodb/mongodb-atlas-local
     hostname: mongodb
+    deploy:
+      resources:
+        limits:
+          cpus: "2.0"
+          memory: 60G
     env_file: "./.env"
     environment:
       MONGODB_INITDB_ROOT_USERNAME: ${MONGO_DB_USERNAME}
@@ -39,6 +49,11 @@ services:
     image: mongo-express:latest
     container_name: mongo-express
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 256M
     depends_on:
       - mongodb
     env_file: "./.env"
