@@ -33,7 +33,7 @@ class BasicAuthMiddleware:
         self._security = HTTPBasic()
 
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
-        if scope["type"] != "http":
+        if scope["type"] != "http" or scope["path"] == "/health":
             await self._app(scope, receive, send)
             return
 

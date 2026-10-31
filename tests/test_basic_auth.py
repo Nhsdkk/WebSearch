@@ -4,12 +4,14 @@ from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
 from application.auth import BasicAuth, add_basic_auth
+from application.health import create_health_router
 
 
 class BasicAuthTests(unittest.TestCase):
     def setUp(self) -> None:
         app = FastAPI(docs_url="/swagger")
         add_basic_auth(app, BasicAuth("username", "password"))
+        app.include_router(create_health_router())
 
         @app.get("/protected")
         def protected() -> dict[str, bool]:
@@ -22,6 +24,12 @@ class BasicAuthTests(unittest.TestCase):
 
         self.assertEqual(response.status_code, 401)
         self.assertEqual(response.headers["www-authenticate"], "Basic")
+
+    def test_health_is_public(self) -> None:
+        response = self.client.get("/health")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json(), {"status": "ok"})
 
     def test_invalid_credentials_are_rejected(self) -> None:
         for username, password in (("wrong", "password"), ("username", "wrong")):

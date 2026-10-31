@@ -20,7 +20,7 @@ services:
       timeout: 5s
       retries: 5
     ports:
-      - "5432:5432"
+      - "7432:5432"
     networks:
       - common
   
@@ -60,7 +60,7 @@ services:
     environment:
       # MongoDB connection settings
       ME_CONFIG_MONGODB_ENABLE_ADMIN: "true"
-      ME_CONFIG_MONGODB_URL: mongodb://user:pass@mongodb:27017/
+      ME_CONFIG_MONGODB_URL: mongodb://${MONGO_DB_USERNAME}:${MONGO_DB_PASSWORD}@mongodb:27017/
       # Basic auth protects the web UI from unauthorized access
       ME_CONFIG_BASICAUTH_ENABLED: "true"
       ME_CONFIG_BASICAUTH_USERNAME: ${MONGO_DB_USERNAME}

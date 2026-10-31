@@ -11,6 +11,7 @@ from uvicorn import Server, Config
 
 from application.application_di_container import ApplicationDiContainer
 from application.auth import BasicAuth, add_basic_auth
+from application.health import create_health_router
 from application.pages.download_page_content_endpoint import (
     DownloadPageContentHandler,
     create_download_page_content_router,
@@ -103,6 +104,7 @@ class Application(LogProducer):
         get_page_handler: GetPageHandler = Provide[AppDiContainer.get_page_handler],
         download_page_content_handler: DownloadPageContentHandler = Provide[AppDiContainer.download_page_content_handler],
     ) -> None:
+        app.include_router(create_health_router())
         app.include_router(create_source_router(create_source_handler))
         app.include_router(create_get_page_router(get_page_handler))
         app.include_router(
