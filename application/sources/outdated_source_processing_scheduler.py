@@ -20,8 +20,8 @@ class OutdatedSourceProcessingSchedulerConfig(JobConfigBase):
 class OutdatedSourceProcessingSchedulerConfigProvider(BaseDiContainer):
     outdated_source_processing_scheduler_config = Resource(
         OutdatedSourceProcessingSchedulerConfig,
-        fail_timeout_seconds=BaseDiContainer.config.outdated_source_processing_scheduler_config.fail_timeout_seconds.as_int(),
-        success_timeout_seconds=BaseDiContainer.config.outdated_source_processing_scheduler_config.success_timeout_seconds.as_int(),
+        fail_timeout_seconds=BaseDiContainer.config.outdated_source_processing_scheduler_config.fail_timeout_seconds.as_float(),
+        success_timeout_seconds=BaseDiContainer.config.outdated_source_processing_scheduler_config.success_timeout_seconds.as_float(),
         batch_size=BaseDiContainer.config.outdated_source_processing_scheduler_config.batch_size.as_int(),
     )
 

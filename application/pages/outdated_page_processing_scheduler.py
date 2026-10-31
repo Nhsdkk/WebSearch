@@ -19,8 +19,8 @@ class OutdatedPageProcessingSchedulerConfig(JobConfigBase):
 class OutdatedPageProcessingSchedulerConfigProvider(InfrastructureDiContainer):
     outdated_page_processing_scheduler_config = Resource(
         OutdatedPageProcessingSchedulerConfig,
-        fail_timeout_seconds=BaseDiContainer.config.outdated_page_processing_scheduler_config.fail_timeout_seconds.as_int(),
-        success_timeout_seconds=BaseDiContainer.config.outdated_page_processing_scheduler_config.success_timeout_seconds.as_int(),
+        fail_timeout_seconds=BaseDiContainer.config.outdated_page_processing_scheduler_config.fail_timeout_seconds.as_float(),
+        success_timeout_seconds=BaseDiContainer.config.outdated_page_processing_scheduler_config.success_timeout_seconds.as_float(),
         batch_size=BaseDiContainer.config.outdated_page_processing_scheduler_config.batch_size.as_int(),
     )
 

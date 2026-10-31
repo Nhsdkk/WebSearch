@@ -3,8 +3,8 @@ application:
   port: ${APPLICATION_PORT:8080}
 
 basic_auth_config:
-  username: "username"
-  password: "password"
+  username: "${BASIC_AUTH_USERNAME:username}"
+  password: ${BASIC_AUTH_PASSWORD:password}
 
 http_client_config:
   user_agent: "${HTTP_CLIENT_USER_AGENT:Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:156.0) Gecko/20100101 Firefox/156.0}"

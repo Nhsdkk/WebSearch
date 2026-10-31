@@ -1,4 +1,3 @@
-import time
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from decimal import InvalidOperation
@@ -25,8 +24,8 @@ class SharedObject[T]:
 
 @dataclass
 class JobConfigBase:
-    fail_timeout_seconds: int = 3
-    success_timeout_seconds: int = 1
+    fail_timeout_seconds: float = 3
+    success_timeout_seconds: float = 1
 
 
 class BackgroundWorkerBase(LogProducer, Thread, ABC):

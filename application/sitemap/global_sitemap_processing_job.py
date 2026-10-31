@@ -23,8 +23,8 @@ class GlobalSitemapProcessingJobConfig(JobConfigBase):
 class GlobalSitemapConfigProvider(BaseDiContainer):
     global_sitemap_processing_job_config = Resource(
         GlobalSitemapProcessingJobConfig,
-        fail_timeout_seconds=BaseDiContainer.config.global_sitemap_processing_job_config.fail_timeout_seconds.as_int(),
-        success_timeout_seconds=BaseDiContainer.config.global_sitemap_processing_job_config.success_timeout_seconds.as_int(),
+        fail_timeout_seconds=BaseDiContainer.config.global_sitemap_processing_job_config.fail_timeout_seconds.as_float(),
+        success_timeout_seconds=BaseDiContainer.config.global_sitemap_processing_job_config.success_timeout_seconds.as_float(),
         batch_size=BaseDiContainer.config.global_sitemap_processing_job_config.batch_size.as_int(),
     )
 
