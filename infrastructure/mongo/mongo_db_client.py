@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from typing import Any
 
 from gridfs import GridFS
-from pymongo import MongoClient
+from pymongo import MongoClient, timeout
 from pymongo.synchronous.database import Database
 
 
@@ -29,6 +29,10 @@ class MongoDbClient:
     
     def get_database[TDocument](self, database_name: str) -> Database[TDocument]:
         return self.__client.get_database(database_name)
+
+    def check_health(self) -> bool:
+        with timeout(2):
+            return self.__client.admin.command("ping").get("ok") == 1
 
 class MongoJsonDatabase[TDocument]:
     db: Database[TDocument]

@@ -1,3 +1,3 @@
-from .health_endpoint import create_health_router
+from .health_endpoint import HealthHandler, create_health_router
 
-__all__ = ["create_health_router"]
+__all__ = ["HealthHandler", "create_health_router"]

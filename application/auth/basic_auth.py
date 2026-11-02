@@ -33,7 +33,7 @@ class BasicAuthMiddleware:
         self._security = HTTPBasic()
 
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
-        if scope["type"] != "http" or scope["path"] == "/health":
+        if scope["type"] != "http" or self.__is_health_path(scope["path"]):
             await self._app(scope, receive, send)
             return
 
@@ -57,6 +57,10 @@ class BasicAuthMiddleware:
             return
 
         await self._app(scope, receive, send)
+        
+    @staticmethod
+    def __is_health_path(path: str) -> bool:
+        return path in ("/health", "/health/live")
 
 
 def add_basic_auth(app: FastAPI, auth: BasicAuth) -> None:

@@ -17,6 +17,13 @@ class ProcessedPageDto:
     title: str
     text_content: str
     full_page_content: BeautifulSoup
+
+    def validate(self) -> None:
+        if not self.title or not self.title.strip():
+            raise ValueError(f"Empty page title extracted for page {self.page_id}")
+
+        if not self.text_content or not self.text_content.strip():
+            raise ValueError(f"Empty page content extracted for page {self.page_id}")
     
     @property
     def content_size_in_kbytes(self) -> int:

@@ -118,6 +118,7 @@ class PageProcessingJob[TProcessor: PageProcessor](BackgroundWorkerBase):
             
             raise Exception(f"Failed to process page with id {page.id} and url '{page.url}' using processor {self.processor.__class__.__name__}")
 
+        processed_page.validate()
 
         self._log(
             LogLevel.INFO,

@@ -1,6 +1,7 @@
 from dependency_injector.providers import Singleton, List
 
 from application.auth import BasicAuth
+from application.health.health_di_container import HealthDiContainer
 from application.pages.pages_di_container import PagesDiContainer
 from application.sitemap import SitemapDiContainer
 from application.sources.sources_di_container import SourcesDiContainer
@@ -8,7 +9,7 @@ from infrastructure import WorkerManager
 from infrastructure.di.base_di_container import BaseDiContainer
 
 
-class ApplicationDiContainer(SitemapDiContainer, SourcesDiContainer, PagesDiContainer):
+class ApplicationDiContainer(SitemapDiContainer, SourcesDiContainer, PagesDiContainer, HealthDiContainer):
     basic_auth = Singleton(
         BasicAuth,
         username=BaseDiContainer.config.basic_auth_config.username,

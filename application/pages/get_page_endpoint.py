@@ -49,7 +49,7 @@ class GetPageHandler:
                 "sitemap_url": page.sitemap_url,
                 "created_at": page.created_at,
                 "last_task_processed_at": page.last_task_processed_at,
-                "raw_page_size_in_kbytes": page.raw_size_in_kbytes,
+                "raw_size_in_kbytes": page.raw_size_in_kbytes,
                 "content_size_in_kbytes": page.content_size_in_kbytes,
             }
 

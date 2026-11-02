@@ -11,7 +11,7 @@ from uvicorn import Server, Config
 
 from application.application_di_container import ApplicationDiContainer
 from application.auth import BasicAuth, add_basic_auth
-from application.health import create_health_router
+from application.health import HealthHandler, create_health_router
 from application.pages.download_page_content_endpoint import (
     DownloadPageContentHandler,
     create_download_page_content_router,
@@ -19,6 +19,14 @@ from application.pages.download_page_content_endpoint import (
 from application.pages.get_page_endpoint import (
     GetPageHandler,
     create_get_page_router,
+)
+from application.pages.get_page_processing_task_stats_endpoint import (
+    GetPageProcessingTaskStatsHandler,
+    create_get_page_processing_task_stats_router,
+)
+from application.pages.get_processed_pages_endpoint import (
+    GetProcessedPagesHandler,
+    create_get_processed_pages_router,
 )
 from application.sources.create_source_endpoint import (
     CreateSourceHandler,
@@ -100,12 +108,17 @@ class Application(LogProducer):
     def _include_routers(
         self,
         app: FastAPI,
+        health_handler: HealthHandler = Provide[AppDiContainer.health_handler],
         create_source_handler: CreateSourceHandler = Provide[AppDiContainer.create_source_handler],
         get_page_handler: GetPageHandler = Provide[AppDiContainer.get_page_handler],
+        get_processed_pages_handler: GetProcessedPagesHandler = Provide[AppDiContainer.get_processed_pages_handler],
+        get_page_processing_task_stats_handler: GetPageProcessingTaskStatsHandler = Provide[AppDiContainer.get_page_processing_task_stats_handler],
         download_page_content_handler: DownloadPageContentHandler = Provide[AppDiContainer.download_page_content_handler],
     ) -> None:
-        app.include_router(create_health_router())
+        app.include_router(create_health_router(health_handler))
         app.include_router(create_source_router(create_source_handler))
+        app.include_router(create_get_processed_pages_router(get_processed_pages_handler))
+        app.include_router(create_get_page_processing_task_stats_router(get_page_processing_task_stats_handler))
         app.include_router(create_get_page_router(get_page_handler))
         app.include_router(
             create_download_page_content_router(download_page_content_handler)

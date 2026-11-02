@@ -25,12 +25,16 @@ class IzvestiaPageProcessor(PageProcessor):
 
     @staticmethod
     def __get_text_content(http_content: BeautifulSoup) -> str:
-        content_block = http_content.find_all("div", attrs={"class": "text-article"})[0]
+        content_block = http_content.select_one(".text-article")
+        if content_block is None:
+            raise ValueError("Izvestia article body was not found")
 
-        text_content_blocks = [block for block in content_block.find_all("p")]
-        text_blocks = [block.text for block in text_content_blocks]
+        paragraphs = [block.get_text().strip() for block in content_block.find_all("p")]
+        content = "\n".join(paragraph for paragraph in paragraphs if paragraph)
+        if not content.strip():
+            raise ValueError("Izvestia article body contains no text paragraphs")
 
-        return "\n".join(text_blocks)
+        return content
 
     @staticmethod
     def __get_page_title(html_content: BeautifulSoup) -> str:
