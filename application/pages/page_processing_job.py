@@ -1,15 +1,13 @@
+from abc import abstractmethod
 from dataclasses import dataclass
 from datetime import datetime, UTC
-from dependency_injector.providers import Resource
-from dependency_injector.wiring import Provide, inject
-from sqlalchemy import Sequence
+from typing import Sequence
+
 from sqlalchemy.sql.expression import select
 
 from application.pages.pages_query_extensions import PagesQueryExtensions
 from application.pages.processors.page_processor import PageProcessor
-from application.pages.processors.page_processors_di_container import PageProcessorsDiContainer
-from infrastructure import BackgroundWorkerBase, PsqlDatabase, JobConfigBase, BaseDiContainer
-from infrastructure.infrastructure_injector import InfrastructureDiContainer
+from infrastructure import BackgroundWorkerBase, PsqlDatabase, JobConfigBase
 from infrastructure.logging.log_producer import LogLevel
 from infrastructure.mongo import MongoJsonDatabase, MongoRawDataDatabase
 from models import PageProcessingTask, ProcessingTaskStatus
@@ -20,40 +18,36 @@ from models.mongo.processed_page import ProcessedPage
 class PageProcessingJobConfig(JobConfigBase):
     batch_size: int = 20
 
-class PageProcessingJobConfigProvider(BaseDiContainer):
-    page_processing_job_config = Resource(
-        PageProcessingJobConfig,
-        fail_timeout_seconds=BaseDiContainer.config.page_processing_job_config.fail_timeout_seconds.as_float(),
-        success_timeout_seconds=BaseDiContainer.config.page_processing_job_config.success_timeout_seconds.as_float(),
-        batch_size=BaseDiContainer.config.page_processing_job_config.batch_size.as_int(),
-    )
-
-class PageProcessingJob(BackgroundWorkerBase):
+class PageProcessingJob[TProcessor: PageProcessor](BackgroundWorkerBase):
     __batch_size: int
     
     __db: PsqlDatabase
-    __page_processors: list[PageProcessor]
+    _page_processor: TProcessor
     
     __content_database: MongoJsonDatabase[dict]
     __raw_content_database: MongoRawDataDatabase
     
-    @inject
     def __init__(
         self,
-        job_config: PageProcessingJobConfig = Provide[PageProcessingJobConfigProvider.page_processing_job_config],
-        database: PsqlDatabase = Provide[InfrastructureDiContainer.database],
-        page_processors: list[PageProcessor] = Provide[PageProcessorsDiContainer.providers],
-        content_database: MongoJsonDatabase[dict] = Provide[InfrastructureDiContainer.mongo_json_db],
-        raw_content_database: MongoRawDataDatabase = Provide[InfrastructureDiContainer.mongo_raw_data_db]):
+        job_config: PageProcessingJobConfig,
+        database: PsqlDatabase,
+        page_processor: TProcessor,
+        content_database: MongoJsonDatabase[dict],
+        raw_content_database: MongoRawDataDatabase):
         super().__init__(job_config)
         
         self.__batch_size = job_config.batch_size
         
         self.__db = database
-        self.__page_processors = page_processors
+        self._page_processor = page_processor
         
         self.__content_database = content_database
         self.__raw_content_database = raw_content_database
+
+    @property
+    @abstractmethod
+    def processor(self) -> TProcessor:
+        pass
     
     def do_work(self) -> bool:
         with self.__db.create_session() as db_session:
@@ -67,6 +61,7 @@ class PageProcessingJob(BackgroundWorkerBase):
                 (
                     select(PageProcessingTask)
                     .join(PageProcessingTask.page)
+                    .filter(self.processor.page_filter())
                     .filter(PagesQueryExtensions.pending_task() | PagesQueryExtensions.retryable_task())
                     .order_by(PageProcessingTask.created_at.asc())
                     .with_for_update(of=PageProcessingTask, skip_locked=True)
@@ -110,8 +105,7 @@ class PageProcessingJob(BackgroundWorkerBase):
             page.url
         )
 
-        processor = next((p for p in self.__page_processors if p.can_process(page)))
-        processed_page = processor.try_process_page(page)
+        processed_page = self.processor.try_process_page(page)
         
         if processed_page is None:
             self._log(
@@ -119,10 +113,10 @@ class PageProcessingJob(BackgroundWorkerBase):
                 "Failed to process page with id %d and url '%s' using processor %s...",
                 page.id,
                 page.url,
-                processor.__class__.__name__
+                self.processor.__class__.__name__
             )
             
-            raise Exception(f"Failed to process page with id {page.id} and url '{page.url}' using processor {processor.__class__.__name__}")
+            raise Exception(f"Failed to process page with id {page.id} and url '{page.url}' using processor {self.processor.__class__.__name__}")
 
 
         self._log(

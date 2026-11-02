@@ -1,10 +1,11 @@
 import uuid
-from abc import ABC, abstractmethod, abstractclassmethod
+from abc import abstractmethod
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Optional
 
 from bs4 import BeautifulSoup
+from sqlalchemy import ColumnElement
 
 from infrastructure import LogProducer
 from infrastructure.http import HttpClient
@@ -26,8 +27,9 @@ class PageProcessor(LogProducer):
         super().__init__()
         self._http_client = http_client
 
-    @abstractclassmethod
-    def can_process(cls, page: Page) -> bool:
+    @classmethod
+    @abstractmethod
+    def page_filter(cls) -> ColumnElement[bool]:
         pass
     
     @abstractmethod
