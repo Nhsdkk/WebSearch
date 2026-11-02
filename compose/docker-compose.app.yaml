@@ -8,13 +8,17 @@ services:
     hostname: migrations
     pull_policy: always
     image: ghcr.io/nhsdkk/websearch-migrations:latest
+    build:
+      context: ../
+      dockerfile: compose/Dockerfile.migrations
     deploy:
       resources:
         limits:
           cpus: "0.5"
           memory: 512M
+    env_file: ".env"
     environment:
-      DATABASE_URL: postgresql+psycopg2://postgres:postgres@postgres:5432/robot_db
+      DATABASE_URL: postgresql+psycopg2://${DATABASE_USERNAME}:${DATABASE_PASSWORD}@postgres:5432/robot_db
     depends_on:
         postgres:
           condition: service_healthy
@@ -25,11 +29,12 @@ services:
     hostname: application
     pull_policy: always
     image: ghcr.io/nhsdkk/websearch-application:latest
+    build:
+      context: ../
+      dockerfile: compose/Dockerfile.app
     env_file: "./.env"
     deploy:
-      mode: replicated
-      replicas: 2
-      endpoint_mode: vip
+  
       resources:
         limits:
           cpus: "1.0"
