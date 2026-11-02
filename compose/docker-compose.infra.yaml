@@ -33,7 +33,7 @@ services:
       resources:
         limits:
           cpus: "2.0"
-          memory: 60G
+          memory: 120G
     env_file: "./.env"
     environment:
       MONGODB_INITDB_ROOT_USERNAME: ${MONGO_DB_USERNAME}
