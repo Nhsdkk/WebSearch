@@ -47,7 +47,10 @@ jobs:
   deploy:
     needs: build
     runs-on: ubuntu-latest
-    concurrency: deploy
+    timeout-minutes: 60
+    concurrency:
+      group: websearch-deploy
+      cancel-in-progress: false
     permissions:
       contents: read
     steps:
@@ -61,34 +64,52 @@ jobs:
           kubeconfig: ${{ secrets.KUBE_CONFIG }}
           kubeconfig-encoding: base64
       - name: Add secret manifest
-        env: ${{ secrets.SECRETS_MANIFEST }}
+        env:
+          SECRETS_MANIFEST: ${{ secrets.SECRETS_MANIFEST }}
         run: |
-          echo "$SECRETS_MANIFEST" > k8s/secret.yaml
-      - name: Apply namespace, config and secrets
+          set -euo pipefail
+          if [[ -z "$SECRETS_MANIFEST" ]]; then
+            echo "Configure the SECRETS_MANIFEST Actions secret with the Kubernetes Secret YAML." >&2
+            exit 1
+          fi
+          umask 077
+          printf '%s\n' "$SECRETS_MANIFEST" > k8s/secret.yaml
+      - name: Apply namespace
         uses: azure/k8s-deploy@v7
         with:
+          manifests: k8s/namespace.yaml
+          annotate-resources: false
+      - name: Apply config and secrets
+        uses: azure/k8s-deploy@v7
+        with:
+          namespace: websearch
           manifests: |
-            k8s/namespace.yaml
             k8s/configmap.yaml
             k8s/secret.yaml
+          annotate-resources: false
+      - name: Remove previous migration Job
+        run: kubectl delete job websearch-migrations --namespace websearch --ignore-not-found --wait=true
       - name: Start database migrations
         uses: azure/k8s-deploy@v7
         with:
+          namespace: websearch
           manifests: k8s/migration-job.yaml
-          images: ghcr.io/nhsdkk/websearch-migrations:latest
-          pull-images: true
+          images: ghcr.io/nhsdkk/websearch-migrations:${{ github.sha }}
+          pull-images: false
+          annotate-resources: false
+          timeout: 10m
       - name: Wait for database migrations
-        uses: actions-hub/kubectl@d95b167fd6c1be77bcace93d188d57d19dfc5258 # v1.37.2
-        env:
-          KUBE_CONFIG: ${{ secrets.KUBE_CONFIG }}
-          KUBECONFIG: /github/home/.kube/config
-        with:
-          args: wait job/websearch-migrations --namespace websearch --for=condition=complete --timeout=10m
+        run: kubectl wait job/websearch-migrations --namespace websearch --for=condition=complete --timeout=10m
+      - name: Remove legacy application Deployment
+        run: kubectl delete deployment websearch --namespace websearch --ignore-not-found --wait=true
       - name: Roll out application
         uses: azure/k8s-deploy@v7
         with:
+          namespace: websearch
           manifests: |
             k8s/service.yaml
             k8s/daemonset.yaml
-          images: ghcr.io/nhsdkk/websearch-application:latest
-          pull-images: true
+          images: ghcr.io/nhsdkk/websearch-application:${{ github.sha }}
+          pull-images: false
+          annotate-resources: false
+          timeout: 30m
