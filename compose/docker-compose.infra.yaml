@@ -17,7 +17,7 @@ services:
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}" ]
       interval: 30s
-      timeout: 5s
+      timeout: 1s
       retries: 5
     ports:
       - "7432:5432"
