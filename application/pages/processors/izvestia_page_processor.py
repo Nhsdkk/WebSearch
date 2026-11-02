@@ -1,4 +1,5 @@
 from bs4 import BeautifulSoup
+from sqlalchemy import ColumnElement, func
 
 from application.pages.processors.page_processor import PageProcessor, ProcessedPageDto
 from models import Page
@@ -8,8 +9,8 @@ class IzvestiaPageProcessor(PageProcessor):
     IZVESTIA_URL_PREFIX = 'https://iz.ru'
 
     @classmethod
-    def can_process(cls, page: Page) -> bool:
-        return page.url.lower().startswith(cls.IZVESTIA_URL_PREFIX)
+    def page_filter(cls) -> ColumnElement[bool]:
+        return func.lower(Page.url).startswith(cls.IZVESTIA_URL_PREFIX + "/", autoescape=True)
 
     def _process_page_content(self, html_content: BeautifulSoup, page: Page) -> ProcessedPageDto:
         page_content = self.__get_text_content(html_content)

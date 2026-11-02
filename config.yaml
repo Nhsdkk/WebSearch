@@ -46,7 +46,12 @@ outdated_page_processing_scheduler_config:
   success_timeout_seconds: ${OUTDATED_PAGE_PROCESSING_SCHEDULER_SUCCESS_TIMEOUT_SECONDS:1}
   batch_size: ${OUTDATED_PAGE_PROCESSING_SCHEDULER_BATCH_SIZE:20}
   
-page_processing_job_config:
-  fail_timeout_seconds: ${PAGE_PROCESSING_JOB_FAIL_TIMEOUT_SECONDS:20}
-  success_timeout_seconds: ${PAGE_PROCESSING_JOB_SUCCESS_TIMEOUT_SECONDS:1}
-  batch_size: ${PAGE_PROCESSING_JOB_BATCH_SIZE:5}
+ria_page_processing_job_config:
+  fail_timeout_seconds: ${RIA_PAGE_PROCESSING_JOB_FAIL_TIMEOUT_SECONDS:20}
+  success_timeout_seconds: ${RIA_PAGE_PROCESSING_JOB_SUCCESS_TIMEOUT_SECONDS:1}
+  batch_size: ${RIA_PAGE_PROCESSING_JOB_BATCH_SIZE:5}
+
+izvestia_page_processing_job_config:
+  fail_timeout_seconds: ${IZVESTIA_PAGE_PROCESSING_JOB_FAIL_TIMEOUT_SECONDS:20}
+  success_timeout_seconds: ${IZVESTIA_PAGE_PROCESSING_JOB_SUCCESS_TIMEOUT_SECONDS:1}
+  batch_size: ${IZVESTIA_PAGE_PROCESSING_JOB_BATCH_SIZE:5}

@@ -24,6 +24,8 @@ class ApplicationDiContainer(SitemapDiContainer, SourcesDiContainer, PagesDiCont
             SitemapDiContainer.local_sitemap_processing_job,
 
             PagesDiContainer.outdated_page_processing_scheduler,
-            PagesDiContainer.page_processing_job,
+
+            PagesDiContainer.ria_page_processing_job,
+            PagesDiContainer.izvestia_page_processing_job,
         )
     )
