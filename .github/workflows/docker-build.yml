@@ -60,12 +60,10 @@ jobs:
         with:
           kubeconfig: ${{ secrets.KUBE_CONFIG }}
           kubeconfig-encoding: base64
-      - name: Generate secret.yaml
-        uses: docker://python:3.13-slim
-        env:
-          SECRET_ENV: ${{ secrets.K8S_SECRET_ENV }}
-        with:
-          args: python k8s/generate_secret.py
+      - name: Add secret manifest
+        env: ${{ secrets.SECRETS_MANIFEST }}
+        run: |
+          echo "$SECRETS_MANIFEST" > k8s/secret.yaml
       - name: Apply namespace, config and secrets
         uses: azure/k8s-deploy@v7
         with:
@@ -73,20 +71,12 @@ jobs:
             k8s/namespace.yaml
             k8s/configmap.yaml
             k8s/secret.yaml
-      - name: Remove previous migration job
-        uses: actions-hub/kubectl@d95b167fd6c1be77bcace93d188d57d19dfc5258 # v1.37.2
-        env:
-          KUBE_CONFIG: ${{ secrets.KUBE_CONFIG }}
-          # k8s-set-context exports a runner path that does not exist inside this action's container.
-          KUBECONFIG: /github/home/.kube/config
-        with:
-          args: delete job websearch-migrations --namespace websearch --ignore-not-found
       - name: Start database migrations
         uses: azure/k8s-deploy@v7
         with:
           manifests: k8s/migration-job.yaml
-          images: ghcr.io/nhsdkk/websearch-migrations:${{ github.sha }}
-          pull-images: false
+          images: ghcr.io/nhsdkk/websearch-migrations:latest
+          pull-images: true
       - name: Wait for database migrations
         uses: actions-hub/kubectl@d95b167fd6c1be77bcace93d188d57d19dfc5258 # v1.37.2
         env:
@@ -100,5 +90,5 @@ jobs:
           manifests: |
             k8s/service.yaml
             k8s/daemonset.yaml
-          images: ghcr.io/nhsdkk/websearch-application:${{ github.sha }}
-          pull-images: false
+          images: ghcr.io/nhsdkk/websearch-application:latest
+          pull-images: true
