@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: websearch
+  namespace: websearch
+spec:
+  type: LoadBalancer
+  selector:
+    app: websearch
+  ports:
+    - name: http
+      port: 8080
+      targetPort: http
+      protocol: TCP

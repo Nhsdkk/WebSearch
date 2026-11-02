@@ -2,3 +2,5 @@
 .venv
 .env
 /compose/data/
+/k8s/secret.env
+/k8s/secret.yaml
