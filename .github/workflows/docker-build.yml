@@ -62,7 +62,6 @@ jobs:
         uses: azure/k8s-set-context@v5
         with:
           kubeconfig: ${{ secrets.KUBE_CONFIG }}
-          kubeconfig-encoding: base64
       - name: Add secret manifest
         env:
           SECRETS_MANIFEST: ${{ secrets.SECRETS_MANIFEST }}
@@ -74,11 +73,6 @@ jobs:
           fi
           umask 077
           printf '%s\n' "$SECRETS_MANIFEST" > k8s/secret.yaml
-      - name: Apply namespace
-        uses: azure/k8s-deploy@v7
-        with:
-          manifests: k8s/namespace.yaml
-          annotate-resources: false
       - name: Apply config and secrets
         uses: azure/k8s-deploy@v7
         with:
