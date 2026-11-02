@@ -60,7 +60,7 @@ class BasicAuthMiddleware:
         
     @staticmethod
     def __is_health_path(path: str) -> bool:
-        return path in ("/health", "/health/live")
+        return path in ("/healthz", "/readyz")
 
 
 def add_basic_auth(app: FastAPI, auth: BasicAuth) -> None:
