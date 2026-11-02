@@ -1,4 +1,4 @@
-name: Build and publish Docker images
+name: Build and deploy
 
 on:
   push:
@@ -43,3 +43,62 @@ jobs:
           labels: org.opencontainers.image.source=https://github.com/${{ github.repository }}
           cache-from: type=gha,scope=${{ matrix.image }}
           cache-to: type=gha,mode=max,scope=${{ matrix.image }}
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    concurrency: deploy
+    permissions:
+      contents: read
+    steps:
+      - name: Check out manifests
+        uses: actions/checkout@v6
+      - name: Set up kubectl
+        uses: azure/setup-kubectl@v5
+      - name: Connect to the cluster
+        uses: azure/k8s-set-context@v5
+        with:
+          kubeconfig: ${{ secrets.KUBE_CONFIG }}
+          kubeconfig-encoding: base64
+      - name: Generate secret.yaml
+        uses: docker://python:3.13-slim
+        env:
+          SECRET_ENV: ${{ secrets.K8S_SECRET_ENV }}
+        with:
+          args: python k8s/generate_secret.py
+      - name: Apply namespace, config and secrets
+        uses: azure/k8s-deploy@v7
+        with:
+          manifests: |
+            k8s/namespace.yaml
+            k8s/configmap.yaml
+            k8s/secret.yaml
+      - name: Remove previous migration job
+        uses: actions-hub/kubectl@d95b167fd6c1be77bcace93d188d57d19dfc5258 # v1.37.2
+        env:
+          KUBE_CONFIG: ${{ secrets.KUBE_CONFIG }}
+          # k8s-set-context exports a runner path that does not exist inside this action's container.
+          KUBECONFIG: /github/home/.kube/config
+        with:
+          args: delete job websearch-migrations --namespace websearch --ignore-not-found
+      - name: Start database migrations
+        uses: azure/k8s-deploy@v7
+        with:
+          manifests: k8s/migration-job.yaml
+          images: ghcr.io/nhsdkk/websearch-migrations:${{ github.sha }}
+          pull-images: false
+      - name: Wait for database migrations
+        uses: actions-hub/kubectl@d95b167fd6c1be77bcace93d188d57d19dfc5258 # v1.37.2
+        env:
+          KUBE_CONFIG: ${{ secrets.KUBE_CONFIG }}
+          KUBECONFIG: /github/home/.kube/config
+        with:
+          args: wait job/websearch-migrations --namespace websearch --for=condition=complete --timeout=10m
+      - name: Roll out application
+        uses: azure/k8s-deploy@v7
+        with:
+          manifests: |
+            k8s/service.yaml
+            k8s/daemonset.yaml
+          images: ghcr.io/nhsdkk/websearch-application:${{ github.sha }}
+          pull-images: false

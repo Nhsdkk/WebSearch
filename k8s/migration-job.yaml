@@ -1,7 +1,7 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  generateName: websearch-migrations-
+  name: websearch-migrations
   namespace: websearch
 spec:
   backoffLimit: 2
