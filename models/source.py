@@ -4,11 +4,11 @@ from typing import Optional
 
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from models.base_entity import BaseIdEntity
+from models.base_entity import BaseIdEntity, SoftDeleteMixin
 
 
 @dataclass
-class Source(BaseIdEntity):
+class Source(SoftDeleteMixin, BaseIdEntity):
     __tablename__ = 'sources'
     
     url: Mapped[str] = mapped_column(nullable=False)

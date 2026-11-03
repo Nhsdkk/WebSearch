@@ -5,6 +5,8 @@ from fastapi import APIRouter, Query
 from pydantic import BaseModel
 from sqlalchemy import func, select
 
+from application.pages.pages_query_extensions import PagesQueryExtensions
+
 from infrastructure import PsqlDatabase
 from infrastructure.mongo import MongoJsonDatabase
 from models import Page
@@ -37,7 +39,7 @@ class GetProcessedPagesHandler:
         self.__content_database = content_database
 
     def handle(self, page: int, page_size: int, source_id: UUID | None = None) -> ProcessedPagesResponse:
-        filters = [Page.last_task_processed_at.is_not(None)]
+        filters = [PagesQueryExtensions.active_page(), Page.last_task_processed_at.is_not(None)]
         if source_id is not None:
             filters.append(Page.source_id == source_id)
 

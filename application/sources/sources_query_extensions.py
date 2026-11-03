@@ -1,8 +1,7 @@
 from datetime import datetime
 
-from sqlalchemy import ColumnElement
+from sqlalchemy import ColumnElement, and_, or_
 from sqlalchemy.sql.expression import text
-from sqlalchemy.sql.operators import or_, and_
 
 from application.sitemap.query_extensions import SitemapQueryExtensions
 from models import Source
@@ -21,6 +20,7 @@ class SourceQueryExtensions:
     @staticmethod
     def outdated_sources(reference_time: datetime) -> ColumnElement[bool]:
         return and_(
+            Source.is_removed.is_(False),
             or_(
                 Source.last_task_processed_at.is_(None),
                 Source.last_task_processed_at + Source.refetch_seconds * text("INTERVAL '1 second'") < reference_time

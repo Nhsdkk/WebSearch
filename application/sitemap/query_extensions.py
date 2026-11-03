@@ -1,6 +1,4 @@
-from operator import and_
-
-from sqlalchemy import ColumnElement
+from sqlalchemy import ColumnElement, and_
 
 from models import SitemapProcessingTask, SitemapType, ProcessingTaskStatus
 

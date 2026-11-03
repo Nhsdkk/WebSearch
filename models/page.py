@@ -5,11 +5,11 @@ from typing import Optional, List
 from sqlalchemy import ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from models.base_entity import BaseIdEntity
+from models.base_entity import BaseIdEntity, SoftDeleteMixin
 from models.source import Source
 
 
-class Page(BaseIdEntity):
+class Page(SoftDeleteMixin, BaseIdEntity):
     __tablename__ = 'pages'
     
     url: Mapped[str] = mapped_column(nullable=False)

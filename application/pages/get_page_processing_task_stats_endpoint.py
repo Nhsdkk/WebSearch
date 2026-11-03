@@ -2,7 +2,7 @@ from uuid import UUID
 
 from fastapi import APIRouter
 from pydantic import BaseModel
-from sqlalchemy import func, select
+from sqlalchemy import and_, func, select
 
 from infrastructure import PsqlDatabase
 from models import Page, PageProcessingTask, ProcessingTaskStatus, Source
@@ -40,8 +40,9 @@ class GetPageProcessingTaskStatsHandler:
                 func.count(task.id).filter(failed & ~task.retryable).label("exhausted_failed"),
             )
             .select_from(Source)
-            .outerjoin(Page, Page.source_id == Source.id)
+            .outerjoin(Page, and_(Page.source_id == Source.id, Page.is_removed.is_(False)))
             .outerjoin(task, task.page_id == Page.id)
+            .where(Source.is_removed.is_(False))
             .group_by(Source.id, Source.url)
             .order_by(Source.url, Source.id)
         )

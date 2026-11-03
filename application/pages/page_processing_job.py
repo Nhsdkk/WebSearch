@@ -61,6 +61,7 @@ class PageProcessingJob[TProcessor: PageProcessor](BackgroundWorkerBase):
                 (
                     select(PageProcessingTask)
                     .join(PageProcessingTask.page)
+                    .filter(PagesQueryExtensions.active_page())
                     .filter(self.processor.page_filter())
                     .filter(PagesQueryExtensions.pending_task() | PagesQueryExtensions.retryable_task())
                     .order_by(PageProcessingTask.created_at.asc())

@@ -1,11 +1,15 @@
 import uuid
-from dataclasses import dataclass
 from datetime import datetime, UTC
 
+from sqlalchemy import false
 from sqlalchemy.orm import DeclarativeBase, mapped_column, Mapped
 
 
-class BaseEntity(DeclarativeBase):    
+class SoftDeleteMixin:
+    is_removed: Mapped[bool] = mapped_column(nullable=False, default=False, server_default=false())
+
+
+class BaseEntity(DeclarativeBase):
     pass
 
 class BaseIdEntity(DeclarativeBase):

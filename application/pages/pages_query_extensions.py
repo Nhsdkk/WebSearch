@@ -8,6 +8,10 @@ from models import Page, Source, PageProcessingTask, ProcessingTaskStatus
 
 class PagesQueryExtensions:
     @staticmethod
+    def active_page() -> ColumnElement[bool]:
+        return and_(Page.is_removed.is_(False), Page.source.has(Source.is_removed.is_(False)))
+
+    @staticmethod
     def by_urls(urls: list[str]) -> ColumnElement[bool]:
         return Page.url.in_(urls)
     
@@ -26,6 +30,7 @@ class PagesQueryExtensions:
     @staticmethod
     def outdated_pages(reference_time: datetime) -> ColumnElement[bool]:
         return and_(
+            PagesQueryExtensions.active_page(),
             or_(
                 Page.last_task_processed_at.is_(None),
                 Page.last_task_processed_at + Source.refetch_seconds * text("INTERVAL '1 second'") < reference_time
