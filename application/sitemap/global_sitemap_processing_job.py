@@ -83,6 +83,7 @@ class GlobalSitemapProcessingJob(BackgroundWorkerBase):
                 (
                     select(SitemapProcessingTask)
                     .join(SitemapProcessingTask.source)
+                    .filter(Source.is_removed.is_(False))
                     .filter(SitemapQueryExtensions.global_sitemap_processing_task())
                     .filter(SitemapQueryExtensions.pending_sitemap_process_task() | SitemapQueryExtensions.retryable_sitemap_process_task())
                     .order_by(SitemapProcessingTask.created_at.asc())

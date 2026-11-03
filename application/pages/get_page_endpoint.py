@@ -3,6 +3,9 @@ from uuid import UUID
 
 from fastapi import APIRouter, HTTPException, status
 from pydantic import BaseModel
+from sqlalchemy import select
+
+from application.pages.pages_query_extensions import PagesQueryExtensions
 
 from infrastructure import PsqlDatabase
 from infrastructure.mongo import MongoJsonDatabase
@@ -38,7 +41,7 @@ class GetPageHandler:
 
     def handle(self, page_id: UUID) -> PageResponse:
         with self.__database.create_session() as db_session:
-            page = db_session.get(Page, page_id)
+            page = db_session.scalar(select(Page).where(Page.id == page_id, PagesQueryExtensions.active_page()))
             if page is None:
                 raise PageNotFoundError
 

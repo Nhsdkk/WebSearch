@@ -81,6 +81,7 @@ class LocalSitemapProcessingJob(BackgroundWorkerBase):
                 (
                     select(SitemapProcessingTask)
                     .join(SitemapProcessingTask.source)
+                    .filter(Source.is_removed.is_(False))
                     .filter(SitemapQueryExtensions.local_sitemap_process_task())
                     .filter(SitemapQueryExtensions.pending_sitemap_process_task() | SitemapQueryExtensions.retryable_sitemap_process_task())
                     .order_by(SitemapProcessingTask.created_at.asc())
@@ -125,6 +126,7 @@ class LocalSitemapProcessingJob(BackgroundWorkerBase):
         page_infos_by_url = {page_info.url: page_info for page_info in page_infos}
         page_urls = list(page_infos_by_url)
         
+        # Removed URLs remain reserved so sitemap discovery cannot recreate them.
         existing_page_urls = set(
             db_session.scalars(
                 select(Page.url)
