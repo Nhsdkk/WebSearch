@@ -1,0 +1,65 @@
+components_manager:
+  default_task_processor: main-task-processor
+  task_processors:
+    main-task-processor:
+      worker_threads: 3
+    fs-task-processor:
+      worker_threads: 1
+    benchmark-task-processor:
+      worker_threads: 1
+      thread_name: benchmark
+    index-load-task-processor:
+      worker_threads: 1
+      thread_name: index-load
+  components:
+    server:
+      listener:
+        address: $search-address
+        address#env: SEARCH_ADDRESS
+        address#fallback: 127.0.0.1
+        port: $search-port
+        port#env: SEARCH_PORT
+        port#fallback: 8081
+    logging:
+      fs-task-processor: fs-task-processor
+      loggers:
+        default:
+          file_path: '@stderr'
+          level: warning
+          overflow_behavior: discard
+    search-index:
+      index-path: $search-index
+      index-path#env: SEARCH_INDEX
+      index-path#fallback: data/demo.bin
+      benchmark-queries-path: data/benchmark-queries.txt
+      tokenizer-corpus-path: $tokenizer-corpus
+      tokenizer-corpus-path#env: TOKENIZER_CORPUS
+      tokenizer-corpus-path#fallback: data/demo.tsv
+      frontend-path: service/frontend/index.html
+    handler-frontend:
+      path: /
+      method: GET
+    handler-search:
+      path: /api/search
+      method: GET
+    handler-load-index:
+      path: /api/index/load
+      method: POST
+      task_processor: index-load-task-processor
+      max_requests_in_flight: 1
+      max_request_size: 268435456
+    handler-statistics:
+      path: /api/stats
+      method: GET
+    handler-benchmark:
+      path: /api/benchmark
+      method: GET,POST
+      task_processor: benchmark-task-processor
+      max_requests_in_flight: 1
+      max_request_size: 131072
+    handler-tokenization-benchmark:
+      path: /api/benchmark/tokenizer
+      method: GET,POST
+      task_processor: benchmark-task-processor
+      max_requests_in_flight: 1
+      max_request_size: 1024

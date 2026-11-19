@@ -1,0 +1,27 @@
+{
+  "date": "2026-11-19",
+  "build": "macos-userver; RelWithDebInfo; macOS 26.7.1 ARM64; Clang 23.1.1; C++20",
+  "configuration": {
+    "TOKENIZER_CORPUS": "data/corpus.tsv",
+    "SEARCH_INDEX": "data/corpus.bin"
+  },
+  "raw_measurements": "../../data/tokenization-metrics.json",
+  "source_tsv_bytes": 318874245,
+  "independent_metrics": "../../data/lr1-token-metrics.json",
+  "full_corpus": {
+    "documents": 82889,
+    "text_bytes": 314686487,
+    "tokens": 23755935,
+    "token_characters": 143046511,
+    "token_bytes": 283715750,
+    "average_token_characters": 6.021506246754758,
+    "average_token_bytes": 11.942941837481875
+  },
+  "independent_counts_match": true,
+  "active_index_statistics_match": true,
+  "rounded_prefixes_match": true,
+  "three_measured_runs_per_prefix": true,
+  "served_page_has_tokenization_option_and_pagination_links": true,
+  "search_query": "московский авиационный институт",
+  "search_hits": 11
+}

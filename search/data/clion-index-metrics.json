@@ -1,0 +1,17 @@
+{
+  "documents": 82889,
+  "terms": 512740,
+  "tokens": 23755935,
+  "text_bytes": 314686487,
+  "index_bytes": 99387660,
+  "average_term_characters": 9.209164,
+  "average_token_characters": 6.021506,
+  "build_ms": 9241.089541,
+  "write_ms": 344.720500,
+  "total_seconds": 9.585810,
+  "ms_per_document": 0.115646,
+  "ms_per_kib": 0.031193,
+  "documents_per_second": 8647.052220,
+  "kib_per_second": 32058.951841,
+  "peak_rss_bytes": 1276837888
+}

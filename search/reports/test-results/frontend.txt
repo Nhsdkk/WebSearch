@@ -1,0 +1,5 @@
+PASS upload replaces statistics and clears results, benchmark table and pagination
+PASS responses started before replacement cannot overwrite the new interface state
+PASS failed upload preserves the active index, statistics and results
+PASS tokenizer option loads corpus metadata, posts repetitions and renders all prefix metrics
+PASS pagination contains encoded destination links and preserves modified-click navigation

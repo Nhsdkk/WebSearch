@@ -1,0 +1,102 @@
+{
+  "documents": 82889,
+  "characters": {
+    "code_points": 172560242,
+    "utf8_bytes": 314686487,
+    "current_ascii": 2377272,
+    "current_cyrillic": 140669239,
+    "other_alphanumeric": 1550,
+    "non_alphanumeric": 29512181
+  },
+  "variants": {
+    "ascii": {
+      "tokens": 840025,
+      "code_points": 2377272
+    },
+    "current": {
+      "tokens": 23755935,
+      "code_points": 143046511
+    },
+    "unicode_alnum": {
+      "tokens": 23755655,
+      "code_points": 143048061
+    }
+  },
+  "current_token_features": {
+    "with_cyrillic": 22923796,
+    "with_latin": 230020,
+    "mixed_cyrillic_and_latin": 2578,
+    "with_ascii_digits": 616556,
+    "only_ascii_digits": 604697,
+    "with_yo": 13634,
+    "changed_by_lowercasing": 4071034,
+    "unicode_tokens_with_excluded_characters": 797
+  },
+  "distinct_current_tokens": {
+    "case_sensitive": 587011,
+    "lowercase": 512740,
+    "lowercase_with_yo_folded": 511246
+  },
+  "top_excluded_alphanumeric": [
+    {
+      "character": "é",
+      "code_point": "U+00E9",
+      "count": 111
+    },
+    {
+      "character": "і",
+      "code_point": "U+0456",
+      "count": 90
+    },
+    {
+      "character": "ا",
+      "code_point": "U+0627",
+      "count": 66
+    },
+    {
+      "character": "ü",
+      "code_point": "U+00FC",
+      "count": 63
+    },
+    {
+      "character": "ó",
+      "code_point": "U+00F3",
+      "count": 35
+    },
+    {
+      "character": "í",
+      "code_point": "U+00ED",
+      "count": 34
+    },
+    {
+      "character": "ل",
+      "code_point": "U+0644",
+      "count": 34
+    },
+    {
+      "character": "ı",
+      "code_point": "U+0131",
+      "count": 30
+    },
+    {
+      "character": "ر",
+      "code_point": "U+0631",
+      "count": 30
+    },
+    {
+      "character": "ي",
+      "code_point": "U+064A",
+      "count": 28
+    },
+    {
+      "character": "è",
+      "code_point": "U+00E8",
+      "count": 24
+    },
+    {
+      "character": "à",
+      "code_point": "U+00E0",
+      "count": 23
+    }
+  ]
+}

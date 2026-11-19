@@ -1,0 +1,528 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Булев поиск</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap">
+  <style>
+    :root {
+      color-scheme: light;
+      --paper: #f5f4ee;
+      --surface: #fffefa;
+      --ink: #171d19;
+      --muted: #4e5b53;
+      --line: #d9dfd5;
+      --forest: #204b38;
+      --mint: #dff2d9;
+      --error: #8f342e;
+      font: 15px/1.55 Manrope, system-ui, sans-serif;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--paper); color: var(--ink); }
+    button, input, textarea, select { font: inherit; }
+    button { cursor: pointer; }
+    button:disabled { opacity: .45; cursor: default; }
+    a { color: var(--forest); }
+    :focus-visible { outline: 2px solid #3b805d; outline-offset: 3px; }
+    [hidden] { display: none !important; }
+    .shell { width: min(1120px, calc(100% - 64px)); margin-inline: auto; }
+    header { border-bottom: 1px solid var(--line); }
+    .top { display: flex; min-height: 76px; align-items: center; justify-content: space-between; gap: 20px; }
+    .brand { display: inline-flex; align-items: center; gap: 10px; color: var(--ink); text-decoration: none; font-weight: 800; }
+    .mark { display: grid; width: 35px; height: 35px; place-items: center; background: var(--forest); color: white;
+            border-radius: 8px; font: 500 16px "IBM Plex Mono", monospace; }
+    nav { display: flex; gap: 5px; }
+    nav a { padding: 8px 13px; border-radius: 7px; color: var(--muted); font-weight: 700; text-decoration: none; }
+    nav a[aria-current="page"] { background: var(--mint); color: var(--forest); }
+    main { padding: 54px 0 64px; }
+    h1 { margin: 0; font-size: clamp(2.1rem, 4.6vw, 3.5rem); letter-spacing: -.06em; line-height: 1.1; }
+    h2 { margin: 0; font-size: 1.12rem; letter-spacing: -.025em; }
+    .intro { color: var(--muted); margin: 13px 0 28px; max-width: 580px; }
+    .columns { display: grid; grid-template-columns: minmax(0, 1fr) 290px; gap: 24px; align-items: start; }
+    .panel { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 23px; min-width: 0; }
+    .query { display: flex; gap: 8px; margin-top: 10px; }
+    label { font-weight: 800; }
+    input, textarea, select { border: 1px solid #bdc8bd; background: var(--surface); color: var(--ink);
+                      border-radius: 8px; padding: 11px 12px; min-width: 0; }
+    .query input { width: 100%; }
+    .index-panel { margin-bottom: 20px; }
+    .upload { display: flex; align-items: center; gap: 10px; margin-top: 10px; flex-wrap: wrap; }
+    .upload input { flex: 1; padding: 8px; }
+    .primary { background: var(--forest); color: white; font-weight: 800; border: 0; border-radius: 8px; padding: 11px 18px; }
+    .primary:hover:not(:disabled) { background: #143c2b; }
+    .help { color: var(--muted); margin: 11px 0 0; font-size: .88rem; }
+    kbd { border: 1px solid var(--line); background: #f0f2ec; padding: 1px 5px; border-radius: 4px;
+          font-family: "IBM Plex Mono", monospace; font-size: .82rem; }
+    .samples { margin-top: 25px; padding-top: 18px; border-top: 1px solid var(--line); }
+    .samples p { margin: 0 0 10px; font-size: .86rem; color: var(--muted); }
+    .sample-list { display: flex; flex-wrap: wrap; gap: 8px; }
+    .secondary { border: 1px solid var(--line); border-radius: 7px; background: #f4f6ef;
+                 color: var(--forest); padding: 7px 10px; font-size: .87rem; font-weight: 700;
+                 display: inline-block; text-decoration: none; }
+    .secondary:hover:not(:disabled) { background: var(--mint); }
+    .secondary[aria-disabled="true"] { opacity: .45; cursor: default; }
+    dl { margin: 12px 0 0; }
+    .metric { display: flex; align-items: baseline; justify-content: space-between; gap: 12px;
+              border-top: 1px solid var(--line); padding: 10px 0; }
+    .metric:first-child { border-top: 0; }
+    .metric:last-child { padding-bottom: 0; }
+    dt { color: var(--muted); font-size: .86rem; }
+    dd { margin: 0; white-space: nowrap; font: 500 .88rem "IBM Plex Mono", monospace; }
+    .status { color: var(--muted); margin: 19px 0 0; }
+    .error { color: var(--error); }
+    .results { list-style: none; padding: 0; margin: 10px 0 0; }
+    .results li { border-bottom: 1px solid var(--line); padding: 14px 0; overflow-wrap: anywhere; }
+    .results a { font-weight: 800; text-decoration-thickness: 1px; text-underline-offset: 3px; }
+    .url { display: block; margin-top: 3px; font-size: .83rem; color: var(--muted); }
+    .pagination { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-top: 17px; }
+    .benchmark-form { display: grid; gap: 10px; }
+    textarea { width: 100%; min-height: 155px; resize: vertical; font-family: "IBM Plex Mono", monospace; }
+    .benchmark-controls { display: flex; align-items: end; gap: 14px; flex-wrap: wrap; margin-top: 4px; }
+    .repeat { display: grid; gap: 4px; }
+    .repeat input { width: 126px; }
+    .benchmark-results { margin-top: 24px; }
+    .table-scroll { overflow: auto; }
+    table { border-collapse: collapse; width: 100%; margin-top: 13px; }
+    th, td { text-align: left; border-bottom: 1px solid var(--line); padding: 9px 11px; }
+    th { font-size: .81rem; color: var(--muted); white-space: nowrap; }
+    td:not(:first-child) { font-family: "IBM Plex Mono", monospace; font-size: .85rem; white-space: nowrap; }
+    @media (max-width: 820px) { .columns { grid-template-columns: 1fr; } }
+    @media (max-width: 520px) {
+      .shell { width: calc(100% - 32px); }
+      main { padding-top: 33px; }
+      .top { min-height: 66px; gap: 8px; }
+      nav a { padding: 6px 8px; font-size: .83rem; }
+      .mark { width: 30px; height: 30px; }
+      .query { flex-wrap: wrap; }
+      .query button { width: 100%; }
+      .panel { padding: 16px; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="shell top">
+      <a class="brand" href="/" aria-label="Булев поиск, главная"><span class="mark" aria-hidden="true">∧∨</span> Булев поиск</a>
+      <nav aria-label="Разделы">
+        <a id="search-tab" href="/" aria-current="page">Поиск</a>
+        <a id="benchmark-tab" href="/?view=benchmark">Замеры</a>
+      </nav>
+    </div>
+  </header>
+  <main class="shell">
+    <h1 id="page-title">Поиск по корпусу</h1>
+    <p class="intro" id="page-intro">Ищите документы по словам и сочетаниям условий.</p>
+    <div class="columns">
+      <section>
+        <section class="panel index-panel" aria-label="Загрузка индекса">
+          <form id="index-form">
+            <label for="index-file">Индекс BIDX</label>
+            <div class="upload">
+              <input id="index-file" type="file" accept=".bin,.bidx,application/octet-stream" required>
+              <button class="primary" id="index-submit" type="submit">Загрузить индекс</button>
+            </div>
+          </form>
+          <p class="help" id="active-index">Загрузка сведений об индексе…</p>
+          <p class="status" id="index-status" role="status" hidden></p>
+        </section>
+        <section class="panel" id="search-panel" aria-label="Поисковые запросы">
+          <form id="search-form">
+            <label for="query">Поисковый запрос</label>
+            <div class="query">
+              <input id="query" name="q" type="search" placeholder="Например, московский авиационный институт"
+                     maxlength="4096" autocomplete="off" aria-describedby="syntax" required>
+              <button class="primary" type="submit">Найти</button>
+            </div>
+            <p class="help" id="syntax">Пробел или <kbd>&amp;&amp;</kbd> — И, <kbd>||</kbd> — ИЛИ, <kbd>!</kbd> — НЕ. Скобки меняют порядок.</p>
+          </form>
+          <div class="samples" id="samples">
+            <p>Примеры запросов</p>
+            <div class="sample-list">
+              <button class="secondary" type="button">московский авиационный институт</button>
+              <button class="secondary" type="button">(красный || желтый) автомобиль</button>
+              <button class="secondary" type="button">руки !ноги</button>
+            </div>
+          </div>
+          <p class="status" id="search-status" role="status" hidden></p>
+          <ol class="results" id="results"></ol>
+          <div class="pagination" id="pagination" hidden>
+            <a class="secondary" id="previous" aria-disabled="true">← Назад</a>
+            <span id="page-number"></span>
+            <a class="secondary" id="next" aria-disabled="true">Далее →</a>
+          </div>
+        </section>
+        <section class="panel" id="benchmark-panel" aria-label="Замеры" hidden>
+          <form class="benchmark-form" id="benchmark-form">
+            <label for="benchmark-kind">Что измерить</label>
+            <select id="benchmark-kind">
+              <option value="search">Булев поиск</option>
+              <option value="tokenizer">Токенизация</option>
+            </select>
+            <div id="benchmark-query-fields">
+              <label for="benchmark-queries">Запросы, по одному на строку</label>
+              <textarea id="benchmark-queries" rows="7" required></textarea>
+            </div>
+            <p class="help" id="benchmark-source" hidden></p>
+            <div class="benchmark-controls">
+              <div class="repeat">
+                <label for="repetitions">Повторения</label>
+                <input id="repetitions" type="number" value="10" min="1" max="100" required>
+              </div>
+              <button class="primary" id="benchmark-submit" type="submit" disabled>Запустить замер</button>
+            </div>
+          </form>
+          <p class="status" id="benchmark-status" role="status" hidden></p>
+          <div class="benchmark-results" id="benchmark-results" hidden>
+            <h2 id="benchmark-heading">Время поиска по запросам</h2>
+            <div class="table-scroll">
+              <table>
+                <thead id="measurement-columns"></thead>
+                <tbody id="measurements"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+      </section>
+      <aside class="panel" aria-labelledby="stats-heading">
+        <h2 id="stats-heading">Статистика индекса</h2>
+        <p class="help" id="stats-status" role="status">Загрузка статистики…</p>
+        <dl id="stats" hidden></dl>
+      </aside>
+    </div>
+  </main>
+  <script>
+    'use strict';
+    const byId = (id) => document.getElementById(id);
+    const number = new Intl.NumberFormat('ru-RU', { maximumFractionDigits: 3 });
+    const size = (bytes) => bytes >= 1048576 ? `${number.format(bytes / 1048576)} МиБ` : `${number.format(bytes / 1024)} КиБ`;
+    const milliseconds = (value) => value.toFixed(3);
+    let searchRequest;
+    let benchmarkRequest;
+    let benchmarkConfigRequest;
+    let benchmarkReady = false;
+    let indexEpoch = 0;
+
+    async function api(path, options) {
+      const response = await fetch(path, options);
+      const body = await response.json().catch(() => null);
+      if (!response.ok || !body) {
+        if (response.status === 413) throw new Error('Размер файла превышает лимит сервиса.');
+        throw new Error(body?.error || `Ошибка запроса (${response.status})`);
+      }
+      return body;
+    }
+
+    function status(id, message, error = false) {
+      const element = byId(id);
+      element.textContent = message;
+      element.classList.toggle('error', error);
+      element.hidden = !message;
+    }
+
+    function renderStats(stats) {
+      byId('active-index').textContent = `Активный индекс — ${stats.index_name}`;
+      byId('stats').replaceChildren();
+      const metrics = [
+        ['Документы', number.format(stats.documents)],
+        ['Термы', number.format(stats.terms)],
+        ['Токены', number.format(stats.tokens)],
+        ['Размер индекса', size(stats.index_bytes)],
+        ['Объём текста', size(stats.text_bytes)],
+        ['Средняя длина терма, симв.', number.format(stats.average_term_characters)],
+        ['Средняя длина токена, симв.', number.format(stats.average_token_characters)],
+        ['Загрузка, мс', milliseconds(stats.load_ms)],
+        ['Индексация, с', stats.total_seconds == null ? '—' : number.format(stats.total_seconds)],
+        ['На документ, мс', stats.ms_per_document == null ? '—' : number.format(stats.ms_per_document)],
+        ['На КиБ текста, мс', stats.ms_per_kib == null ? '—' : number.format(stats.ms_per_kib)],
+        ['Документов/с', stats.documents_per_second == null ? '—' : number.format(stats.documents_per_second)],
+        ['КиБ текста/с', stats.kib_per_second == null ? '—' : number.format(stats.kib_per_second)],
+      ];
+      for (const [name, value] of metrics) {
+        const row = document.createElement('div');
+        row.className = 'metric';
+        const term = document.createElement('dt');
+        const detail = document.createElement('dd');
+        term.textContent = name;
+        detail.textContent = value;
+        row.append(term, detail);
+        byId('stats').append(row);
+      }
+      byId('stats').hidden = false;
+      status('stats-status', stats.total_seconds == null
+        ? 'Для замера времени индексации пересоберите индекс.'
+        : 'Индексация включает построение и запись. КиБ = 1024 байта.');
+    }
+
+    async function loadStats() {
+      const epoch = indexEpoch;
+      try {
+        const stats = await api('/api/stats');
+        if (epoch === indexEpoch) renderStats(stats);
+      } catch (error) {
+        if (epoch === indexEpoch) status('stats-status', error.message, true);
+      }
+    }
+
+    byId('index-form').addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const file = byId('index-file').files[0];
+      if (!file) return;
+      const button = byId('index-submit');
+      button.disabled = true;
+      status('index-status', 'Загрузка и проверка индекса…');
+      try {
+        const query = new URLSearchParams({ filename: file.name });
+        const stats = await api(`/api/index/load?${query}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/octet-stream' },
+          body: file,
+        });
+        ++indexEpoch;
+        searchRequest?.abort();
+        benchmarkRequest?.abort();
+        searchRequest = null;
+        benchmarkRequest = null;
+        byId('results').replaceChildren();
+        byId('pagination').hidden = true;
+        byId('samples').hidden = false;
+        byId('benchmark-results').hidden = true;
+        byId('measurements').replaceChildren();
+        byId('benchmark-submit').disabled = !benchmarkReady;
+        byId('benchmark-kind').disabled = false;
+        status('search-status', '');
+        status('benchmark-status', '');
+        const params = new URLSearchParams(location.search);
+        params.delete('q');
+        params.delete('page');
+        history.replaceState(null, '', params.size ? `/?${params}` : '/');
+        renderStats(stats);
+        status('index-status', 'Индекс загружен.');
+      } catch (error) {
+        status('index-status', error.message, true);
+      } finally {
+        button.disabled = false;
+      }
+    });
+
+    function renderResults(body) {
+      for (const result of body.results) {
+        const item = document.createElement('li');
+        let url;
+        try { url = new URL(result.url); } catch {}
+        if (url && ['http:', 'https:'].includes(url.protocol)) {
+          const link = document.createElement('a');
+          link.href = url.href;
+          link.textContent = result.title;
+          item.append(link);
+        } else {
+          const title = document.createElement('strong');
+          title.textContent = result.title;
+          item.append(title);
+        }
+        const address = document.createElement('span');
+        address.className = 'url';
+        address.textContent = result.url;
+        item.append(address);
+        byId('results').append(item);
+      }
+
+      const label = body.total === 0 ? 'Совпадений нет' : `Найдено: ${number.format(body.total)}`;
+      status('search-status', `${label} · ${milliseconds(body.elapsed_ms)} мс`);
+      byId('pagination').hidden = body.total_pages < 2;
+      byId('page-number').textContent = `Страница ${body.page} из ${body.total_pages}`;
+      paginationLink('previous', body.query, body.page - 1, body.page > 1);
+      paginationLink('next', body.query, body.page + 1, body.page < body.total_pages);
+    }
+
+    function paginationLink(id, query, page, enabled) {
+      const link = byId(id);
+      link.setAttribute('aria-disabled', String(!enabled));
+      if (enabled) {
+        link.href = `/?${new URLSearchParams({ q: query, page })}`;
+        link.removeAttribute('tabindex');
+      } else {
+        link.removeAttribute('href');
+        link.setAttribute('tabindex', '-1');
+      }
+      link.onclick = (event) => {
+        if (!enabled) {
+          event.preventDefault();
+        } else if (event.button === 0 && !event.ctrlKey && !event.metaKey && !event.shiftKey && !event.altKey) {
+          event.preventDefault();
+          navigateSearch(query, page);
+        }
+      };
+    }
+
+    async function runSearch(query, page) {
+      searchRequest?.abort();
+      searchRequest = null;
+      byId('query').value = query;
+      byId('results').replaceChildren();
+      byId('pagination').hidden = true;
+      byId('samples').hidden = Boolean(query);
+      status('search-status', query ? 'Поиск…' : '');
+      if (!query) return;
+      const controller = new AbortController();
+      searchRequest = controller;
+      try {
+        const params = new URLSearchParams({ q: query, page });
+        const body = await api(`/api/search?${params}`, { signal: controller.signal });
+        if (searchRequest === controller) renderResults(body);
+      } catch (error) {
+        if (searchRequest === controller && error.name !== 'AbortError') {
+          status('search-status', error.message, true);
+        }
+      }
+    }
+
+    function navigateSearch(query, page) {
+      const params = new URLSearchParams({ q: query, page });
+      history.pushState(null, '', `/?${params}`);
+      runSearch(query, page);
+    }
+
+    async function initBenchmark() {
+      benchmarkConfigRequest?.abort();
+      const controller = new AbortController();
+      benchmarkConfigRequest = controller;
+      benchmarkReady = false;
+      const tokenizer = byId('benchmark-kind').value === 'tokenizer';
+      byId('benchmark-query-fields').hidden = tokenizer;
+      byId('benchmark-queries').required = !tokenizer;
+      byId('benchmark-source').hidden = !tokenizer;
+      byId('benchmark-source').textContent = '';
+      byId('benchmark-submit').disabled = true;
+      byId('benchmark-results').hidden = true;
+      status('benchmark-status', 'Загрузка настроек…');
+      try {
+        const config = await api(tokenizer ? '/api/benchmark/tokenizer' : '/api/benchmark', {
+          signal: controller.signal,
+        });
+        if (benchmarkConfigRequest !== controller) return;
+        if (tokenizer) {
+          byId('benchmark-source').textContent = `Корпус — ${config.corpus}. Префиксы 1%, 10% и 100%; один прогрев перед каждым замером. ` +
+            'Скорость рассчитана по времени токенизатора. КиБ = 1024 байта.';
+        } else {
+          byId('benchmark-queries').value = config.queries.join('\n');
+        }
+        byId('repetitions').value = config.repetitions;
+        byId('repetitions').max = config.max_repetitions;
+        benchmarkReady = true;
+        byId('benchmark-submit').disabled = false;
+        status('benchmark-status', '');
+      } catch (error) {
+        if (benchmarkConfigRequest === controller && error.name !== 'AbortError') {
+          status('benchmark-status', error.message, true);
+        }
+      }
+    }
+
+    byId('benchmark-kind').addEventListener('change', initBenchmark);
+
+    function renderBenchmark(report, tokenizer) {
+      const columns = tokenizer
+        ? ['Префикс', 'Документы', 'Текст, КиБ', 'Токены', 'Длина, симв.', 'Длина, байт',
+           'Токенизатор, мс', 'Полный проход, мс', 'мс/КиБ', 'КиБ/с']
+        : ['Запрос', 'Найдено', 'Мин., мс', 'Среднее, мс', 'Макс., мс'];
+      const header = document.createElement('tr');
+      for (const title of columns) {
+        const cell = document.createElement('th');
+        cell.textContent = title;
+        header.append(cell);
+      }
+      byId('measurement-columns').replaceChildren(header);
+      byId('benchmark-heading').textContent = tokenizer
+        ? `Токенизация корпуса ${report.corpus}` : 'Время поиска по запросам';
+      const results = tokenizer ? report.samples : report.queries;
+      for (const result of results) {
+        const values = tokenizer
+          ? [`${result.percentage}%`, number.format(result.documents), number.format(result.text_bytes / 1024),
+             number.format(result.tokens), number.format(result.average_token_characters),
+             number.format(result.average_token_bytes), milliseconds(result.tokenization_mean_ms),
+             milliseconds(result.total_mean_ms), number.format(result.ms_per_kib), number.format(result.kib_per_second)]
+          : [result.query, number.format(result.hits), milliseconds(result.min_ms),
+             milliseconds(result.mean_ms), milliseconds(result.max_ms)];
+        const row = document.createElement('tr');
+        for (const value of values) {
+          const cell = document.createElement('td');
+          cell.textContent = value;
+          row.append(cell);
+        }
+        byId('measurements').append(row);
+      }
+      status('benchmark-status', tokenizer
+        ? `${report.repetitions} повторения на каждый префикс · среднее время без прогрева`
+        : `${number.format(report.timed_executions)} запусков · ${milliseconds(report.overall_mean_ms)} мс в среднем`);
+      byId('benchmark-results').hidden = false;
+    }
+
+    byId('benchmark-form').addEventListener('submit', async (event) => {
+      event.preventDefault();
+      if (!benchmarkReady || benchmarkRequest) return;
+      const epoch = indexEpoch;
+      const tokenizer = byId('benchmark-kind').value === 'tokenizer';
+      const controller = new AbortController();
+      benchmarkRequest = controller;
+      const button = byId('benchmark-submit');
+      button.disabled = true;
+      byId('benchmark-kind').disabled = true;
+      byId('benchmark-results').hidden = true;
+      byId('measurements').replaceChildren();
+      status('benchmark-status', 'Выполняются замеры…');
+      try {
+        const payload = { repetitions: byId('repetitions').valueAsNumber };
+        if (!tokenizer) {
+          payload.queries = byId('benchmark-queries').value.split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
+        }
+        const report = await api(tokenizer ? '/api/benchmark/tokenizer' : '/api/benchmark', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+          signal: controller.signal,
+        });
+        if (benchmarkRequest !== controller || epoch !== indexEpoch) return;
+        renderBenchmark(report, tokenizer);
+      } catch (error) {
+        if (benchmarkRequest === controller && error.name !== 'AbortError') {
+          status('benchmark-status', error.message, true);
+        }
+      } finally {
+        if (benchmarkRequest === controller) {
+          benchmarkRequest = null;
+          button.disabled = !benchmarkReady;
+          byId('benchmark-kind').disabled = false;
+        }
+      }
+    });
+
+    byId('search-form').addEventListener('submit', (event) => {
+      event.preventDefault();
+      navigateSearch(byId('query').value.trim(), 1);
+    });
+    for (const button of byId('samples').querySelectorAll('button')) {
+      button.addEventListener('click', () => navigateSearch(button.textContent, 1));
+    }
+
+    const params = new URLSearchParams(location.search);
+    if (params.get('view') === 'benchmark') {
+      byId('search-panel').hidden = true;
+      byId('benchmark-panel').hidden = false;
+      byId('search-tab').removeAttribute('aria-current');
+      byId('benchmark-tab').setAttribute('aria-current', 'page');
+      byId('page-title').textContent = 'Замеры';
+      byId('page-intro').textContent = 'Измерьте время поиска по индексу или токенизации исходного корпуса.';
+      initBenchmark();
+    } else {
+      const readLocation = () => {
+        const current = new URLSearchParams(location.search);
+        runSearch(current.get('q') || '', current.get('page') || '1');
+      };
+      window.addEventListener('popstate', readLocation);
+      readLocation();
+    }
+    loadStats();
+  </script>
+</body>
+</html>

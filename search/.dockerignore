@@ -1,0 +1,8 @@
+/build/
+/build-*/
+/cmake-build-*/
+/.idea/
+/data/*.bin
+/data/corpus.tsv
+/data/results*.jsonl
+**/__pycache__/

@@ -1,0 +1,30 @@
+{
+  "date": "2026-11-19",
+  "upload_bytes": 99387708,
+  "upload_status": 200,
+  "statistics": {
+    "index_name": "corpus.bin",
+    "documents": 82889,
+    "terms": 512740,
+    "index_bytes": 99387708,
+    "text_bytes": 314686487,
+    "tokens": 23755935,
+    "average_term_characters": 9.209164488824745,
+    "average_token_characters": 6.021506246754758,
+    "load_ms": 425.157542,
+    "build_ms": 17164.004959,
+    "write_ms": 410.893792,
+    "total_seconds": 17.574898751,
+    "ms_per_document": 0.21202932537489896,
+    "ms_per_kib": 0.05718928859193118,
+    "documents_per_second": 4716.328735338158,
+    "kib_per_second": 17485.791913506855
+  },
+  "query": "московский авиационный институт",
+  "query_hits": 11,
+  "cli_results_match": true,
+  "benchmark_executions": 1000,
+  "benchmark_hit_counts_match": true,
+  "invalid_upload_status": 400,
+  "active_index_preserved": true
+}

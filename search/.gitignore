@@ -1,0 +1,8 @@
+/build/
+/build-*/
+/CMakeUserPresets.json
+/data/*.bin
+/data/corpus.tsv
+/data/*.tmp
+/data/results*.jsonl
+__pycache__/

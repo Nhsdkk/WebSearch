@@ -1,0 +1,11 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration name="Search service" type="CMakeRunConfiguration" factoryName="Application"
+                 PROGRAM_PARAMS="-c service/static_config.yaml" WORKING_DIR="file://$PROJECT_DIR$"
+                 PROJECT_NAME="boolean_search_labs" TARGET_NAME="search_service"
+                 CONFIG_NAME="macos-userver" RUN_TARGET_PROJECT_NAME="boolean_search_labs"
+                 RUN_TARGET_NAME="search_service">
+    <method v="2">
+      <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+    </method>
+  </configuration>
+</component>

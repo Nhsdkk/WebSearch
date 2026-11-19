@@ -1,0 +1,14 @@
+{
+  "documents": 82889,
+  "text_bytes": 314686487,
+  "tokens": 23755935,
+  "token_characters": 143046511,
+  "token_bytes": 283715750,
+  "average_token_characters": 6.021506246754758,
+  "average_token_bytes": 11.942941837481875,
+  "tokenization": "[A-Za-z0-9А-Яа-яЁё]+; lowercase; title and body; no stop-word removal",
+  "cpp_index_metrics_match": true,
+  "unique_terms_cpp": 512740,
+  "average_term_characters_cpp": 9.209164,
+  "term_minus_token_characters": 3.187657753245241
+}
