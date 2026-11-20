@@ -1,0 +1,16 @@
+{
+  "documents": 5,
+  "terms": 25,
+  "tokens": 41,
+  "text_bytes": 550,
+  "index_bytes": 1858,
+  "average_term_characters": 5.800000,
+  "average_token_characters": 6.219512,
+  "build_ms": 0.635958,
+  "write_ms": 0.241959,
+  "total_seconds": 0.000878,
+  "ms_per_document": 0.175583,
+  "ms_per_kib": 1.634522,
+  "documents_per_second": 5695.299214,
+  "kib_per_second": 611.799720
+}

@@ -41,7 +41,7 @@ class JsonWriter {
     }
 
     void Result(const indexing::Index& index, const std::string& query, const indexing::DocList& matches,
-                double elapsed_ms) {
+                double elapsed_ms, MatchMode mode) {
         output_ << "{\"query\":";
         String(query);
         output_ << ",\"total\":" << matches.size() << ",\"elapsed_ms\":" << std::fixed << std::setprecision(6)
@@ -58,10 +58,10 @@ class JsonWriter {
             String(document.url);
             output_ << '}';
         }
-        output_ << "]}\n";
+        output_ << "],\"mode\":\"" << MatchModes::Name(mode) << "\"}\n";
     }
 
-    void Error(const std::string& query, const std::string& message) {
+    void Error(const std::string& query, const std::string& message, MatchMode mode) {
         output_ << "{\"query\":";
         try {
             indexing::Tokenizer{}.Utf8Length(query);
@@ -71,7 +71,7 @@ class JsonWriter {
         }
         output_ << ",\"error\":";
         String(message);
-        output_ << "}\n";
+        output_ << ",\"mode\":\"" << MatchModes::Name(mode) << "\"}\n";
     }
 
    private:
@@ -80,8 +80,8 @@ class JsonWriter {
 
 }  // namespace
 
-int SearchCli::Run(const std::string& index_path, std::istream& input, std::ostream& output,
-                   std::ostream& errors) const {
+int SearchCli::Run(const std::string& index_path, std::istream& input, std::ostream& output, std::ostream& errors,
+                   MatchMode mode) const {
     try {
         const auto index = indexing::IndexLoader{}.Load(index_path);
         const BooleanSearch search(index);
@@ -96,13 +96,13 @@ int SearchCli::Run(const std::string& index_path, std::istream& input, std::ostr
             JsonWriter writer(record);
             try {
                 const auto start = std::chrono::steady_clock::now();
-                const auto matches = search.Search(query);
+                const auto matches = search.Search(query, mode);
                 const auto elapsed =
                     std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - start).count();
-                writer.Result(index, query, matches, elapsed);
+                writer.Result(index, query, matches, elapsed, mode);
             } catch (const std::runtime_error& error) {
                 query_errors = true;
-                writer.Error(query, error.what());
+                writer.Error(query, error.what(), mode);
             }
             output << record.str();
             if (!output) {

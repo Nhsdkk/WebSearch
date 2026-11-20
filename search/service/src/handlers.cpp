@@ -71,6 +71,7 @@ std::uint64_t ParsePage(const HttpRequest& request) {
 
 struct BenchmarkOptions {
     std::uint64_t repetitions = kDefaultRepetitions;
+    boolsearch::MatchMode mode = boolsearch::MatchMode::kStem;
     std::vector<std::string> queries;
 };
 
@@ -86,6 +87,9 @@ BenchmarkOptions ParseBenchmark(const HttpRequest& request, const std::vector<st
     }
     if (body.HasMember("repetitions")) {
         options.repetitions = body["repetitions"].As<std::uint64_t>();
+    }
+    if (body.HasMember("mode")) {
+        options.mode = boolsearch::MatchModes::Parse(body["mode"].As<std::string>());
     }
     if (options.repetitions == 0 || options.repetitions > kMaxRepetitions) {
         throw std::invalid_argument("Repetitions must be between 1 and 100");
@@ -112,7 +116,7 @@ class Benchmark {
         hits.reserve(options.queries.size());
         for (const auto& query : options.queries) {
             try {
-                hits.push_back(index.Search(query).size());
+                hits.push_back(index.Search(query, options.mode).size());
             } catch (const std::runtime_error& error) {
                 throw std::invalid_argument("Query " + std::to_string(hits.size() + 1) + ": " + error.what());
             }
@@ -121,7 +125,7 @@ class Benchmark {
         double total_ms = 0;
         ValueBuilder queries(Type::kArray);
         for (std::size_t i = 0; i < options.queries.size(); ++i) {
-            queries.PushBack(Measure(index, options.queries[i], hits[i], options.repetitions, total_ms));
+            queries.PushBack(Measure(index, options.queries[i], hits[i], options.repetitions, total_ms, options.mode));
         }
         const auto executions = options.queries.size() * options.repetitions;
         ValueBuilder report(Type::kObject);
@@ -129,6 +133,7 @@ class Benchmark {
         report["terms"] = index.index().terms().size();
         report["load_ms"] = index.load_ms();
         report["index_name"] = index.name();
+        report["mode"] = boolsearch::MatchModes::Name(options.mode);
         report["repetitions"] = options.repetitions;
         report["warmup_per_query"] = 1;
         report["query_count"] = options.queries.size();
@@ -141,13 +146,13 @@ class Benchmark {
 
    private:
     static ValueBuilder Measure(const IndexSnapshot& index, const std::string& query, std::size_t hits,
-                                std::uint64_t repetitions, double& total_ms) {
+                                std::uint64_t repetitions, double& total_ms, boolsearch::MatchMode mode) {
         double minimum = 0;
         double maximum = 0;
         double total = 0;
         for (std::uint64_t i = 0; i < repetitions; ++i) {
             const auto start = Clock::now();
-            const auto matches = index.Search(query);
+            const auto matches = index.Search(query, mode);
             const double elapsed = ElapsedMs(start);
             if (matches.size() != hits) {
                 throw std::logic_error("Inconsistent search result count");
@@ -182,10 +187,14 @@ std::string SearchHandler::HandleRequest(HttpRequest& request, userver::server::
     std::uint64_t page = 0;
     indexing::DocList matches;
     double elapsed = 0;
+    auto mode = boolsearch::MatchMode::kStem;
     try {
         page = ParsePage(request);
+        if (request.HasArg("mode")) {
+            mode = boolsearch::MatchModes::Parse(request.GetArg("mode"));
+        }
         const auto start = Clock::now();
-        matches = snapshot->Search(query);
+        matches = snapshot->Search(query, mode);
         elapsed = ElapsedMs(start);
     } catch (const std::invalid_argument& error) {
         return BadRequest(request, error.what());
@@ -210,6 +219,7 @@ std::string SearchHandler::HandleRequest(HttpRequest& request, userver::server::
     ValueBuilder body(Type::kObject);
     body["query"] = query;
     body["index_name"] = snapshot->name();
+    body["mode"] = boolsearch::MatchModes::Name(mode);
     body["page"] = page;
     body["page_size"] = kPageSize;
     body["total"] = matches.size();
@@ -227,6 +237,9 @@ ValueBuilder IndexHandler::Statistics(const IndexSnapshot& snapshot) {
 
     ValueBuilder body(Type::kObject);
     body["index_name"] = snapshot.name();
+    body["index_sha256"] = snapshot.sha256();
+    body["stem_terms"] = snapshot.engine().stem_count();
+    body["has_frequencies"] = snapshot.index().frequencies().has_value();
     body["documents"] = index.documents().size();
     body["terms"] = index.terms().size();
     body["index_bytes"] = snapshot.bytes();

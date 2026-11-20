@@ -19,6 +19,23 @@ add_executable(test_tokenization test_corpus_reader.cpp test_tokenization_benchm
 target_link_libraries(test_tokenization PRIVATE search_index GTest::gtest_main)
 gtest_discover_tests(test_tokenization)
 
+add_executable(test_analysis test_stemming.cpp test_analysis.cpp)
+target_link_libraries(test_analysis PRIVATE search_analysis GTest::gtest_main)
+target_compile_definitions(test_analysis PRIVATE SEARCH_RUSSIAN_REFERENCE="${CMAKE_CURRENT_SOURCE_DIR}/data/russian-reference.tsv")
+gtest_discover_tests(test_analysis)
+
+find_program(SEARCH_TEST_NODE node)
+if(SEARCH_TEST_NODE)
+  add_executable(test_frontend test_frontend.cpp)
+  target_link_libraries(test_frontend PRIVATE GTest::gtest_main)
+  target_compile_definitions(test_frontend PRIVATE
+    SEARCH_TEST_NODE="${SEARCH_TEST_NODE}"
+    SEARCH_FRONTEND_PROBE="${CMAKE_CURRENT_SOURCE_DIR}/frontend_probe.js"
+    SEARCH_FRONTEND_HTML="${PROJECT_SOURCE_DIR}/service/frontend/index.html"
+  )
+  gtest_discover_tests(test_frontend PROPERTIES TIMEOUT 20)
+endif()
+
 find_package(Python3 REQUIRED COMPONENTS Interpreter)
 add_executable(test_export_corpus test_export_corpus.cpp)
 target_link_libraries(test_export_corpus PRIVATE GTest::gtest_main)

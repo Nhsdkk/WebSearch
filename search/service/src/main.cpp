@@ -13,6 +13,8 @@ int main(int argc, char* argv[]) {
                                 .Append<search_web::StatisticsHandler>()
                                 .Append<search_web::BenchmarkHandler>()
                                 .Append<search_web::TokenizationBenchmarkHandler>()
+                                .Append<search_web::ZipfHandler>()
+                                .Append<search_web::QualityHandler>()
                                 .Append<search_web::FrontendHandler>();
     return userver::utils::DaemonMain(argc, argv, components);
 }

@@ -1,85 +1,121 @@
 Test project /Users/avnikittsev/PycharmProjects/WebSearch/search/build-gtest-core
       Start  1: TokenizerTest.NormalizesLatinAndCyrillic
- 1/40 Test  #1: TokenizerTest.NormalizesLatinAndCyrillic ...................................   Passed    0.01 sec
+ 1/58 Test  #1: TokenizerTest.NormalizesLatinAndCyrillic ...................................   Passed    0.02 sec
       Start  2: TokenizerTest.RejectsMalformedUtf8
- 2/40 Test  #2: TokenizerTest.RejectsMalformedUtf8 .........................................   Passed    0.01 sec
+ 2/58 Test  #2: TokenizerTest.RejectsMalformedUtf8 .........................................   Passed    0.01 sec
       Start  3: TokenizerTest.PreservesCurrentAccentHyphenAndTechnicalNameRules
- 3/40 Test  #3: TokenizerTest.PreservesCurrentAccentHyphenAndTechnicalNameRules ............   Passed    0.01 sec
+ 3/58 Test  #3: TokenizerTest.PreservesCurrentAccentHyphenAndTechnicalNameRules ............   Passed    0.00 sec
       Start  4: SearchTest.IndexesTitlesAndDeduplicatesPostings
- 4/40 Test  #4: SearchTest.IndexesTitlesAndDeduplicatesPostings ............................   Passed    0.01 sec
+ 4/58 Test  #4: SearchTest.IndexesTitlesAndDeduplicatesPostings ............................   Passed    0.00 sec
       Start  5: SearchTest.EvaluatesBooleanOperatorsAndPrecedence
- 5/40 Test  #5: SearchTest.EvaluatesBooleanOperatorsAndPrecedence ..........................   Passed    0.01 sec
+ 5/58 Test  #5: SearchTest.EvaluatesBooleanOperatorsAndPrecedence ..........................   Passed    0.00 sec
       Start  6: SearchTest.RejectsMalformedQueries
- 6/40 Test  #6: SearchTest.RejectsMalformedQueries .........................................   Passed    0.01 sec
+ 6/58 Test  #6: SearchTest.RejectsMalformedQueries .........................................   Passed    0.01 sec
       Start  7: SearchTest.RoundTripsIndexDeterministically
- 7/40 Test  #7: SearchTest.RoundTripsIndexDeterministically ................................   Passed    0.01 sec
+ 7/58 Test  #7: SearchTest.RoundTripsIndexDeterministically ................................   Passed    0.01 sec
       Start  8: SearchTest.PreservesIndexingMetricsWhenReloadingAndSaving
- 8/40 Test  #8: SearchTest.PreservesIndexingMetricsWhenReloadingAndSaving ..................   Passed    0.01 sec
+ 8/58 Test  #8: SearchTest.PreservesIndexingMetricsWhenReloadingAndSaving ..................   Passed    0.01 sec
       Start  9: SearchTest.DecodesAndPreservesTsvEscapes
- 9/40 Test  #9: SearchTest.DecodesAndPreservesTsvEscapes ...................................   Passed    0.00 sec
+ 9/58 Test  #9: SearchTest.DecodesAndPreservesTsvEscapes ...................................   Passed    0.01 sec
       Start 10: SearchTest.RejectsInvalidTsv
-10/40 Test #10: SearchTest.RejectsInvalidTsv ...............................................   Passed    0.01 sec
+10/58 Test #10: SearchTest.RejectsInvalidTsv ...............................................   Passed    0.01 sec
       Start 11: SearchTest.HandlesEmptyCorpus
-11/40 Test #11: SearchTest.HandlesEmptyCorpus ..............................................   Passed    0.01 sec
+11/58 Test #11: SearchTest.HandlesEmptyCorpus ..............................................   Passed    0.01 sec
       Start 12: SearchTest.MatchesDocumentByDocumentOracle
-12/40 Test #12: SearchTest.MatchesDocumentByDocumentOracle .................................   Passed    0.02 sec
+12/58 Test #12: SearchTest.MatchesDocumentByDocumentOracle .................................   Passed    0.02 sec
       Start 13: IndexFileTest.RejectsEveryTruncation
-13/40 Test #13: IndexFileTest.RejectsEveryTruncation .......................................   Passed    0.08 sec
+13/58 Test #13: IndexFileTest.RejectsEveryTruncation .......................................   Passed    0.07 sec
       Start 14: IndexFileTest.RejectsInvalidSectionsAndRecords
-14/40 Test #14: IndexFileTest.RejectsInvalidSectionsAndRecords .............................   Passed    0.01 sec
+14/58 Test #14: IndexFileTest.RejectsInvalidSectionsAndRecords .............................   Passed    0.01 sec
       Start 15: IndexFileTest.SkipsUnknownSectionInNewMinorVersion
-15/40 Test #15: IndexFileTest.SkipsUnknownSectionInNewMinorVersion .........................   Passed    0.01 sec
+15/58 Test #15: IndexFileTest.SkipsUnknownSectionInNewMinorVersion .........................   Passed    0.00 sec
       Start 16: SearchCliTest.ProcessesCrLfBlankLinesAndFinalLineWithoutNewline
-16/40 Test #16: SearchCliTest.ProcessesCrLfBlankLinesAndFinalLineWithoutNewline ............   Passed    0.02 sec
+16/58 Test #16: SearchCliTest.ProcessesCrLfBlankLinesAndFinalLineWithoutNewline ............   Passed    0.02 sec
       Start 17: SearchCliTest.ContinuesAfterQueryErrors
-17/40 Test #17: SearchCliTest.ContinuesAfterQueryErrors ....................................   Passed    0.01 sec
+17/58 Test #17: SearchCliTest.ContinuesAfterQueryErrors ....................................   Passed    0.00 sec
       Start 18: SearchCliTest.ReportsInvalidUtf8AsValidJson
-18/40 Test #18: SearchCliTest.ReportsInvalidUtf8AsValidJson ................................   Passed    0.00 sec
+18/58 Test #18: SearchCliTest.ReportsInvalidUtf8AsValidJson ................................   Passed    0.01 sec
       Start 19: SearchCliTest.WritesAllMatches
-19/40 Test #19: SearchCliTest.WritesAllMatches .............................................   Passed    0.01 sec
+19/58 Test #19: SearchCliTest.WritesAllMatches .............................................   Passed    0.01 sec
       Start 20: SearchCliTest.HandlesEmptyInput
-20/40 Test #20: SearchCliTest.HandlesEmptyInput ............................................   Passed    0.01 sec
+20/58 Test #20: SearchCliTest.HandlesEmptyInput ............................................   Passed    0.01 sec
       Start 21: SearchCliTest.ReportsStartupAndStreamFailures
-21/40 Test #21: SearchCliTest.ReportsStartupAndStreamFailures ..............................   Passed    0.01 sec
-      Start 22: IndexFormatTest.Header
-22/40 Test #22: IndexFormatTest.Header .....................................................   Passed    0.01 sec
-      Start 23: IndexFormatTest.Section
-23/40 Test #23: IndexFormatTest.Section ....................................................   Passed    0.00 sec
-      Start 24: IndexFormatTest.Document
-24/40 Test #24: IndexFormatTest.Document ...................................................   Passed    0.00 sec
-      Start 25: IndexFormatTest.Term
-25/40 Test #25: IndexFormatTest.Term .......................................................   Passed    0.00 sec
-      Start 26: IndexFormatTest.Posting
-26/40 Test #26: IndexFormatTest.Posting ....................................................   Passed    0.00 sec
-      Start 27: IndexFormatTest.Statistics
-27/40 Test #27: IndexFormatTest.Statistics .................................................   Passed    0.00 sec
-      Start 28: IndexFormatTest.EmptyStringsReplacePreviousValues
-28/40 Test #28: IndexFormatTest.EmptyStringsReplacePreviousValues ..........................   Passed    0.00 sec
-      Start 29: IndexFormatTest.IndexingTimings
-29/40 Test #29: IndexFormatTest.IndexingTimings ............................................   Passed    0.00 sec
-      Start 30: CorpusReaderTest.DecodesEscapesAndHandlesBomBlankLinesAndCrlf
-30/40 Test #30: CorpusReaderTest.DecodesEscapesAndHandlesBomBlankLinesAndCrlf ..............   Passed    0.01 sec
-      Start 31: CorpusReaderTest.ReadsEmptyCorpusAndRejectsMissingFile
-31/40 Test #31: CorpusReaderTest.ReadsEmptyCorpusAndRejectsMissingFile .....................   Passed    0.00 sec
-      Start 32: CorpusReaderTest.RejectsMalformedRecordsWithPhysicalLineNumber
-32/40 Test #32: CorpusReaderTest.RejectsMalformedRecordsWithPhysicalLineNumber .............   Passed    0.01 sec
-      Start 33: TokenizationBenchmarkTest.MeasuresRoundedPrefixesAndMatchesIndexCounters
-33/40 Test #33: TokenizationBenchmarkTest.MeasuresRoundedPrefixesAndMatchesIndexCounters ...   Passed    0.01 sec
-      Start 34: TokenizationBenchmarkTest.DefaultsToThreeMeasuredRepetitionsAfterWarmup
-34/40 Test #34: TokenizationBenchmarkTest.DefaultsToThreeMeasuredRepetitionsAfterWarmup ....   Passed    0.00 sec
-      Start 35: TokenizationBenchmarkTest.HandlesEmptyCorpusAndTextWithoutTokens
-35/40 Test #35: TokenizationBenchmarkTest.HandlesEmptyCorpusAndTextWithoutTokens ...........   Passed    0.00 sec
-      Start 36: TokenizationBenchmarkTest.RejectsInvalidRepetitionsAndMalformedInput
-36/40 Test #36: TokenizationBenchmarkTest.RejectsInvalidRepetitionsAndMalformedInput .......   Passed    0.00 sec
-      Start 37: TokenizationBenchmarkMetricsTest.NormalizesByDecodedKibAndMeasuredRuns
-37/40 Test #37: TokenizationBenchmarkMetricsTest.NormalizesByDecodedKibAndMeasuredRuns .....   Passed    0.00 sec
-      Start 38: ExportCorpusTest.ReadsLiteralEnvironmentValues
-38/40 Test #38: ExportCorpusTest.ReadsLiteralEnvironmentValues .............................   Passed    0.10 sec
-      Start 39: ExportCorpusTest.EscapesFieldBoundaries
-39/40 Test #39: ExportCorpusTest.EscapesFieldBoundaries ....................................   Passed    0.05 sec
-      Start 40: ExportCorpusTest.ValidatesUuids
-40/40 Test #40: ExportCorpusTest.ValidatesUuids ............................................   Passed    0.10 sec
+21/58 Test #21: SearchCliTest.ReportsStartupAndStreamFailures ..............................   Passed    0.01 sec
+      Start 22: SearchCliTest.DefaultsToStemmingAndCanSelectExactForm
+22/58 Test #22: SearchCliTest.DefaultsToStemmingAndCanSelectExactForm ......................   Passed    0.00 sec
+      Start 23: IndexFormatTest.Header
+23/58 Test #23: IndexFormatTest.Header .....................................................   Passed    0.01 sec
+      Start 24: IndexFormatTest.Section
+24/58 Test #24: IndexFormatTest.Section ....................................................   Passed    0.00 sec
+      Start 25: IndexFormatTest.Document
+25/58 Test #25: IndexFormatTest.Document ...................................................   Passed    0.00 sec
+      Start 26: IndexFormatTest.Term
+26/58 Test #26: IndexFormatTest.Term .......................................................   Passed    0.00 sec
+      Start 27: IndexFormatTest.Posting
+27/58 Test #27: IndexFormatTest.Posting ....................................................   Passed    0.00 sec
+      Start 28: IndexFormatTest.Statistics
+28/58 Test #28: IndexFormatTest.Statistics .................................................   Passed    0.00 sec
+      Start 29: IndexFormatTest.EmptyStringsReplacePreviousValues
+29/58 Test #29: IndexFormatTest.EmptyStringsReplacePreviousValues ..........................   Passed    0.00 sec
+      Start 30: IndexFormatTest.IndexingTimings
+30/58 Test #30: IndexFormatTest.IndexingTimings ............................................   Passed    0.00 sec
+      Start 31: CorpusReaderTest.DecodesEscapesAndHandlesBomBlankLinesAndCrlf
+31/58 Test #31: CorpusReaderTest.DecodesEscapesAndHandlesBomBlankLinesAndCrlf ..............   Passed    0.01 sec
+      Start 32: CorpusReaderTest.ReadsEmptyCorpusAndRejectsMissingFile
+32/58 Test #32: CorpusReaderTest.ReadsEmptyCorpusAndRejectsMissingFile .....................   Passed    0.00 sec
+      Start 33: CorpusReaderTest.RejectsMalformedRecordsWithPhysicalLineNumber
+33/58 Test #33: CorpusReaderTest.RejectsMalformedRecordsWithPhysicalLineNumber .............   Passed    0.00 sec
+      Start 34: TokenizationBenchmarkTest.MeasuresRoundedPrefixesAndMatchesIndexCounters
+34/58 Test #34: TokenizationBenchmarkTest.MeasuresRoundedPrefixesAndMatchesIndexCounters ...   Passed    0.01 sec
+      Start 35: TokenizationBenchmarkTest.DefaultsToThreeMeasuredRepetitionsAfterWarmup
+35/58 Test #35: TokenizationBenchmarkTest.DefaultsToThreeMeasuredRepetitionsAfterWarmup ....   Passed    0.00 sec
+      Start 36: TokenizationBenchmarkTest.HandlesEmptyCorpusAndTextWithoutTokens
+36/58 Test #36: TokenizationBenchmarkTest.HandlesEmptyCorpusAndTextWithoutTokens ...........   Passed    0.00 sec
+      Start 37: TokenizationBenchmarkTest.RejectsInvalidRepetitionsAndMalformedInput
+37/58 Test #37: TokenizationBenchmarkTest.RejectsInvalidRepetitionsAndMalformedInput .......   Passed    0.01 sec
+      Start 38: TokenizationBenchmarkMetricsTest.NormalizesByDecodedKibAndMeasuredRuns
+38/58 Test #38: TokenizationBenchmarkMetricsTest.NormalizesByDecodedKibAndMeasuredRuns .....   Passed    0.00 sec
+      Start 39: RussianStemmerTest.FollowsReferenceRulesAndLongestSuffixes
+39/58 Test #39: RussianStemmerTest.FollowsReferenceRulesAndLongestSuffixes .................   Passed    0.01 sec
+      Start 40: RussianStemmerTest.LeavesNonRussianTokensUnchangedAndRejectsInvalidUtf8
+40/58 Test #40: RussianStemmerTest.LeavesNonRussianTokensUnchangedAndRejectsInvalidUtf8 ....   Passed    0.00 sec
+      Start 41: RussianStemmerTest.MatchesOfficialRussianReferenceVocabulary
+41/58 Test #41: RussianStemmerTest.MatchesOfficialRussianReferenceVocabulary ...............   Passed    0.20 sec
+      Start 42: StemmingSearchTest.DefaultsToWordFormsAndPreservesExactMode
+42/58 Test #42: StemmingSearchTest.DefaultsToWordFormsAndPreservesExactMode ................   Passed    0.01 sec
+      Start 43: StemmingSearchTest.AppliesFormsInsideBooleanOperatorsAndNegation
+43/58 Test #43: StemmingSearchTest.AppliesFormsInsideBooleanOperatorsAndNegation ...........   Passed    0.00 sec
+      Start 44: MatchModeTest.AcceptsOnlyExplicitModes
+44/58 Test #44: MatchModeTest.AcceptsOnlyExplicitModes .....................................   Passed    0.00 sec
+      Start 45: FrequencyTest.CountsAllOccurrencesAndRoundTripsVersion12
+45/58 Test #45: FrequencyTest.CountsAllOccurrencesAndRoundTripsVersion12 ...................   Passed    0.01 sec
+      Start 46: FrequencyTest.KeepsLegacyIndexesSearchableWithoutInventingFrequencies
+46/58 Test #46: FrequencyTest.KeepsLegacyIndexesSearchableWithoutInventingFrequencies ......   Passed    0.01 sec
+      Start 47: FrequencyTest.RejectsCorruptCollectionFrequencyPayloadsAndMetadata
+47/58 Test #47: FrequencyTest.RejectsCorruptCollectionFrequencyPayloadsAndMetadata .........   Passed    0.01 sec
+      Start 48: FrequencyRecordTest.OwnsBinaryOperatorsAndValidation
+48/58 Test #48: FrequencyRecordTest.OwnsBinaryOperatorsAndValidation .......................   Passed    0.00 sec
+      Start 49: ZipfTest.FitsKnownZipfAndMandelbrotDistributions
+49/58 Test #49: ZipfTest.FitsKnownZipfAndMandelbrotDistributions ...........................   Passed    0.00 sec
+      Start 50: ZipfTest.HandlesEmptySmallAndTiedDistributions
+50/58 Test #50: ZipfTest.HandlesEmptySmallAndTiedDistributions .............................   Passed    0.00 sec
+      Start 51: ZipfTest.SamplesActualRanksAndPreservesEndpoints
+51/58 Test #51: ZipfTest.SamplesActualRanksAndPreservesEndpoints ...........................   Passed    0.01 sec
+      Start 52: QualityTest.CalculatesPrecisionAndRecallWithinJudgedPool
+52/58 Test #52: QualityTest.CalculatesPrecisionAndRecallWithinJudgedPool ...................   Passed    0.00 sec
+      Start 53: QualityTest.RejectsWrongCorpusMissingJudgmentsAndInvalidRepetitions
+53/58 Test #53: QualityTest.RejectsWrongCorpusMissingJudgmentsAndInvalidRepetitions ........   Passed    0.00 sec
+      Start 54: QualityTest.DefinesZeroRelevantPoolsAndRejectsDuplicateJudgments
+54/58 Test #54: QualityTest.DefinesZeroRelevantPoolsAndRejectsDuplicateJudgments ...........   Passed    0.00 sec
+      Start 55: FrontendTest.PreservesModesChartsAndIndexReplacementState
+55/58 Test #55: FrontendTest.PreservesModesChartsAndIndexReplacementState ..................   Passed    0.41 sec
+      Start 56: ExportCorpusTest.ReadsLiteralEnvironmentValues
+56/58 Test #56: ExportCorpusTest.ReadsLiteralEnvironmentValues .............................   Passed    0.19 sec
+      Start 57: ExportCorpusTest.EscapesFieldBoundaries
+57/58 Test #57: ExportCorpusTest.EscapesFieldBoundaries ....................................   Passed    0.05 sec
+      Start 58: ExportCorpusTest.ValidatesUuids
+58/58 Test #58: ExportCorpusTest.ValidatesUuids ............................................   Passed    0.12 sec
 
-100% tests passed, 0 tests failed out of 40
+100% tests passed, 0 tests failed out of 58
 
-Total Test time (real) =   0.59 sec
+Total Test time (real) =   1.40 sec

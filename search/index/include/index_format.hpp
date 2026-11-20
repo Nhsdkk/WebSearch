@@ -123,6 +123,16 @@ class IndexFormat {
         friend std::ostream& operator<<(std::ostream& output, const IndexingRecord& record);
     };
 
+    struct FrequencyRecord {
+        static constexpr std::uint64_t kSize = 8;
+        std::uint64_t count = 0;
+
+        void Validate(std::uint64_t document_frequency, std::uint64_t token_count) const;
+        static void ValidateTotal(std::uint64_t sum, std::uint64_t token_count);
+        friend std::istream& operator>>(std::istream& input, FrequencyRecord& record);
+        friend std::ostream& operator<<(std::ostream& output, const FrequencyRecord& record);
+    };
+
     static constexpr unsigned char kMagic[8] = {'B', 'I', 'D', 'X', '\r', '\n', 0x1a, '\n'};
 
     // Finds a required section or throws if it is absent.

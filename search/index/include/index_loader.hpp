@@ -3,6 +3,7 @@
 
 #include <cstdint>
 #include <iosfwd>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -34,6 +35,9 @@ class IndexLoader {
     std::vector<Term> ReadTerms(std::istream& input, const Directory& directory, std::uint64_t& term_characters) const;
     static DocList ReadPostings(std::istream& input, std::uint64_t document_count, std::uint64_t count);
     static Statistics ReadStatistics(std::istream& input, const Directory& directory, std::uint64_t term_characters);
+    static std::optional<std::vector<std::uint64_t>> ReadFrequencies(std::istream& input, const Directory& directory,
+                                                                     const std::vector<Term>& terms,
+                                                                     std::uint64_t token_count);
 
     Tokenizer tokenizer_;
 };

@@ -40,12 +40,19 @@
     h2 { margin: 0; font-size: 1.12rem; letter-spacing: -.025em; }
     .intro { color: var(--muted); margin: 13px 0 28px; max-width: 580px; }
     .columns { display: grid; grid-template-columns: minmax(0, 1fr) 290px; gap: 24px; align-items: start; }
+    .columns > section { min-width: 0; }
     .panel { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 23px; min-width: 0; }
     .query { display: flex; gap: 8px; margin-top: 10px; }
     label { font-weight: 800; }
     input, textarea, select { border: 1px solid #bdc8bd; background: var(--surface); color: var(--ink);
                       border-radius: 8px; padding: 11px 12px; min-width: 0; }
     .query input { width: 100%; }
+    .mode { display: flex; align-items: center; gap: 8px; margin-top: 12px; font-size: .9rem; }
+    .mode input { width: auto; }
+    .chart { width: 100%; height: auto; margin-top: 18px; }
+    .legend { display: flex; flex-wrap: wrap; gap: 16px; font-size: .85rem; margin-top: 12px; }
+    .legend span::before { content: ''; display: inline-block; width: 20px; margin-right: 6px;
+                           border-top: 3px solid currentColor; vertical-align: middle; }
     .index-panel { margin-bottom: 20px; }
     .upload { display: flex; align-items: center; gap: 10px; margin-top: 10px; flex-wrap: wrap; }
     .upload input { flex: 1; padding: 8px; }
@@ -107,6 +114,7 @@
       <nav aria-label="Разделы">
         <a id="search-tab" href="/" aria-current="page">Поиск</a>
         <a id="benchmark-tab" href="/?view=benchmark">Замеры</a>
+        <a id="analysis-tab" href="/?view=analysis">Ципф</a>
       </nav>
     </div>
   </header>
@@ -134,6 +142,7 @@
                      maxlength="4096" autocomplete="off" aria-describedby="syntax" required>
               <button class="primary" type="submit">Найти</button>
             </div>
+            <label class="mode"><input id="word-forms" type="checkbox" checked> Искать все словоформы</label>
             <p class="help" id="syntax">Пробел или <kbd>&amp;&amp;</kbd> — И, <kbd>||</kbd> — ИЛИ, <kbd>!</kbd> — НЕ. Скобки меняют порядок.</p>
           </form>
           <div class="samples" id="samples">
@@ -158,12 +167,18 @@
             <select id="benchmark-kind">
               <option value="search">Булев поиск</option>
               <option value="tokenizer">Токенизация</option>
+              <option value="quality">Качество поиска</option>
             </select>
             <div id="benchmark-query-fields">
               <label for="benchmark-queries">Запросы, по одному на строку</label>
               <textarea id="benchmark-queries" rows="7" required></textarea>
             </div>
             <p class="help" id="benchmark-source" hidden></p>
+            <div class="repeat" id="benchmark-mode-field">
+              <label for="benchmark-mode">Совпадение слов</label>
+              <select id="benchmark-mode"><option value="stem">Все словоформы</option>
+                <option value="exact">Точная форма</option></select>
+            </div>
             <div class="benchmark-controls">
               <div class="repeat">
                 <label for="repetitions">Повторения</label>
@@ -181,6 +196,19 @@
                 <tbody id="measurements"></tbody>
               </table>
             </div>
+          </div>
+        </section>
+        <section class="panel" id="analysis-panel" aria-label="Частоты терминов" hidden>
+          <h2>Распределение частот терминов</h2>
+          <p class="help">Ранг и число вхождений терма в заголовках и статьях. Обе шкалы логарифмические.</p>
+          <p class="status" id="analysis-status" role="status"></p>
+          <div id="analysis-results" hidden>
+            <svg class="chart" id="zipf-chart" viewBox="0 0 760 400" role="img"
+                 aria-label="Частоты терминов, закон Ципфа и модель Мандельброта"></svg>
+            <div class="legend"><span style="color:#204b38">Корпус</span>
+              <span style="color:#b06427">Ципф</span><span style="color:#466ca5">Мандельброт</span></div>
+            <p class="help" id="zipf-parameters"></p>
+            <p><a class="secondary" href="/api/analysis/zipf?format=tsv">Скачать все частоты (TSV)</a></p>
           </div>
         </section>
       </section>
@@ -201,6 +229,7 @@
     let benchmarkRequest;
     let benchmarkConfigRequest;
     let benchmarkReady = false;
+    let analysisRequest;
     let indexEpoch = 0;
 
     async function api(path, options) {
@@ -226,6 +255,7 @@
       const metrics = [
         ['Документы', number.format(stats.documents)],
         ['Термы', number.format(stats.terms)],
+        ['Основы слов', number.format(stats.stem_terms)],
         ['Токены', number.format(stats.tokens)],
         ['Размер индекса', size(stats.index_bytes)],
         ['Объём текста', size(stats.text_bytes)],
@@ -281,15 +311,20 @@
         ++indexEpoch;
         searchRequest?.abort();
         benchmarkRequest?.abort();
+        analysisRequest?.abort();
         searchRequest = null;
         benchmarkRequest = null;
+        analysisRequest = null;
         byId('results').replaceChildren();
         byId('pagination').hidden = true;
         byId('samples').hidden = false;
         byId('benchmark-results').hidden = true;
         byId('measurements').replaceChildren();
+        byId('analysis-results').hidden = true;
+        byId('zipf-chart').replaceChildren();
         byId('benchmark-submit').disabled = !benchmarkReady;
         byId('benchmark-kind').disabled = false;
+        byId('benchmark-mode').disabled = false;
         status('search-status', '');
         status('benchmark-status', '');
         const params = new URLSearchParams(location.search);
@@ -297,6 +332,8 @@
         params.delete('page');
         history.replaceState(null, '', params.size ? `/?${params}` : '/');
         renderStats(stats);
+        if (params.get('view') === 'analysis') loadAnalysis();
+        if (params.get('view') === 'benchmark' && byId('benchmark-kind').value === 'quality') initBenchmark();
         status('index-status', 'Индекс загружен.');
       } catch (error) {
         status('index-status', error.message, true);
@@ -331,15 +368,15 @@
       status('search-status', `${label} · ${milliseconds(body.elapsed_ms)} мс`);
       byId('pagination').hidden = body.total_pages < 2;
       byId('page-number').textContent = `Страница ${body.page} из ${body.total_pages}`;
-      paginationLink('previous', body.query, body.page - 1, body.page > 1);
-      paginationLink('next', body.query, body.page + 1, body.page < body.total_pages);
+      paginationLink('previous', body.query, body.page - 1, body.page > 1, body.mode);
+      paginationLink('next', body.query, body.page + 1, body.page < body.total_pages, body.mode);
     }
 
-    function paginationLink(id, query, page, enabled) {
+    function paginationLink(id, query, page, enabled, mode = searchMode()) {
       const link = byId(id);
       link.setAttribute('aria-disabled', String(!enabled));
       if (enabled) {
-        link.href = `/?${new URLSearchParams({ q: query, page })}`;
+        link.href = `/?${new URLSearchParams({ q: query, page, mode })}`;
         link.removeAttribute('tabindex');
       } else {
         link.removeAttribute('href');
@@ -350,15 +387,18 @@
           event.preventDefault();
         } else if (event.button === 0 && !event.ctrlKey && !event.metaKey && !event.shiftKey && !event.altKey) {
           event.preventDefault();
-          navigateSearch(query, page);
+          navigateSearch(query, page, mode);
         }
       };
     }
 
-    async function runSearch(query, page) {
+    function searchMode() { return byId('word-forms').checked ? 'stem' : 'exact'; }
+
+    async function runSearch(query, page, mode = searchMode()) {
       searchRequest?.abort();
       searchRequest = null;
       byId('query').value = query;
+      byId('word-forms').checked = mode === 'stem';
       byId('results').replaceChildren();
       byId('pagination').hidden = true;
       byId('samples').hidden = Boolean(query);
@@ -367,7 +407,7 @@
       const controller = new AbortController();
       searchRequest = controller;
       try {
-        const params = new URLSearchParams({ q: query, page });
+        const params = new URLSearchParams({ q: query, page, mode });
         const body = await api(`/api/search?${params}`, { signal: controller.signal });
         if (searchRequest === controller) renderResults(body);
       } catch (error) {
@@ -377,10 +417,10 @@
       }
     }
 
-    function navigateSearch(query, page) {
-      const params = new URLSearchParams({ q: query, page });
+    function navigateSearch(query, page, mode = searchMode()) {
+      const params = new URLSearchParams({ q: query, page, mode });
       history.pushState(null, '', `/?${params}`);
-      runSearch(query, page);
+      runSearch(query, page, mode);
     }
 
     async function initBenchmark() {
@@ -389,19 +429,26 @@
       benchmarkConfigRequest = controller;
       benchmarkReady = false;
       const tokenizer = byId('benchmark-kind').value === 'tokenizer';
-      byId('benchmark-query-fields').hidden = tokenizer;
-      byId('benchmark-queries').required = !tokenizer;
-      byId('benchmark-source').hidden = !tokenizer;
+      const quality = byId('benchmark-kind').value === 'quality';
+      byId('benchmark-query-fields').hidden = tokenizer || quality;
+      byId('benchmark-mode-field').hidden = tokenizer || quality;
+      byId('benchmark-queries').required = !tokenizer && !quality;
+      byId('benchmark-source').hidden = !tokenizer && !quality;
       byId('benchmark-source').textContent = '';
       byId('benchmark-submit').disabled = true;
       byId('benchmark-results').hidden = true;
       status('benchmark-status', 'Загрузка настроек…');
       try {
-        const config = await api(tokenizer ? '/api/benchmark/tokenizer' : '/api/benchmark', {
+        const config = await api(quality ? '/api/benchmark/quality'
+          : tokenizer ? '/api/benchmark/tokenizer' : '/api/benchmark', {
           signal: controller.signal,
         });
         if (benchmarkConfigRequest !== controller) return;
-        if (tokenizer) {
+        if (quality) {
+          if (!config.available) throw new Error(config.reason);
+          byId('benchmark-source').textContent = `${config.query_count} размеченных запросов · ${config.index_name}. ` +
+            'P@20 и полнота в размеченном пуле сравниваются для точной формы и всех словоформ.';
+        } else if (tokenizer) {
           byId('benchmark-source').textContent = `Корпус — ${config.corpus}. Префиксы 1%, 10% и 100%; один прогрев перед каждым замером. ` +
             'Скорость рассчитана по времени токенизатора. КиБ = 1024 байта.';
         } else {
@@ -421,8 +468,13 @@
 
     byId('benchmark-kind').addEventListener('change', initBenchmark);
 
-    function renderBenchmark(report, tokenizer) {
-      const columns = tokenizer
+    function renderBenchmark(report, kind) {
+      const tokenizer = kind === 'tokenizer';
+      const quality = kind === 'quality';
+      const columns = quality
+        ? ['Запрос', 'Точно: найдено', 'Основы: найдено', 'Точно: P@20', 'Основы: P@20',
+           'Точно: R пула', 'Основы: R пула', 'Точно, мс', 'Основы, мс']
+        : tokenizer
         ? ['Префикс', 'Документы', 'Текст, КиБ', 'Токены', 'Длина, симв.', 'Длина, байт',
            'Токенизатор, мс', 'Полный проход, мс', 'мс/КиБ', 'КиБ/с']
         : ['Запрос', 'Найдено', 'Мин., мс', 'Среднее, мс', 'Макс., мс'];
@@ -433,11 +485,17 @@
         header.append(cell);
       }
       byId('measurement-columns').replaceChildren(header);
-      byId('benchmark-heading').textContent = tokenizer
-        ? `Токенизация корпуса ${report.corpus}` : 'Время поиска по запросам';
+      byId('benchmark-heading').textContent = quality ? `Качество поиска — ${report.index_name}`
+        : tokenizer ? `Токенизация корпуса ${report.corpus}`
+        : `Время поиска — ${report.mode === 'exact' ? 'точная форма' : 'все словоформы'}`;
       const results = tokenizer ? report.samples : report.queries;
       for (const result of results) {
-        const values = tokenizer
+        const values = quality
+          ? [result.query, number.format(result.exact.total), number.format(result.stem.total),
+             number.format(result.exact.p_at20), number.format(result.stem.p_at20),
+             number.format(result.exact.pool_recall_at20), number.format(result.stem.pool_recall_at20),
+             milliseconds(result.exact.mean_ms), milliseconds(result.stem.mean_ms)]
+          : tokenizer
           ? [`${result.percentage}%`, number.format(result.documents), number.format(result.text_bytes / 1024),
              number.format(result.tokens), number.format(result.average_token_characters),
              number.format(result.average_token_bytes), milliseconds(result.tokenization_mean_ms),
@@ -445,6 +503,7 @@
           : [result.query, number.format(result.hits), milliseconds(result.min_ms),
              milliseconds(result.mean_ms), milliseconds(result.max_ms)];
         const row = document.createElement('tr');
+        if (quality) row.title = result.intent;
         for (const value of values) {
           const cell = document.createElement('td');
           cell.textContent = value;
@@ -452,7 +511,10 @@
         }
         byId('measurements').append(row);
       }
-      status('benchmark-status', tokenizer
+      status('benchmark-status', quality
+        ? `Среднее P@20: ${number.format(report.macro.exact_p_at20)} → ${number.format(report.macro.stem_p_at20)}. ` +
+          'Полнота относится только к размеченному пулу, не ко всему корпусу.'
+        : tokenizer
         ? `${report.repetitions} повторения на каждый префикс · среднее время без прогрева`
         : `${number.format(report.timed_executions)} запусков · ${milliseconds(report.overall_mean_ms)} мс в среднем`);
       byId('benchmark-results').hidden = false;
@@ -462,28 +524,32 @@
       event.preventDefault();
       if (!benchmarkReady || benchmarkRequest) return;
       const epoch = indexEpoch;
-      const tokenizer = byId('benchmark-kind').value === 'tokenizer';
+      const kind = byId('benchmark-kind').value;
       const controller = new AbortController();
       benchmarkRequest = controller;
       const button = byId('benchmark-submit');
       button.disabled = true;
       byId('benchmark-kind').disabled = true;
+      byId('benchmark-mode').disabled = true;
       byId('benchmark-results').hidden = true;
       byId('measurements').replaceChildren();
       status('benchmark-status', 'Выполняются замеры…');
       try {
         const payload = { repetitions: byId('repetitions').valueAsNumber };
-        if (!tokenizer) {
+        if (kind === 'search') {
           payload.queries = byId('benchmark-queries').value.split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
+          payload.mode = byId('benchmark-mode').value;
         }
-        const report = await api(tokenizer ? '/api/benchmark/tokenizer' : '/api/benchmark', {
+        const endpoint = kind === 'quality' ? '/api/benchmark/quality'
+          : kind === 'tokenizer' ? '/api/benchmark/tokenizer' : '/api/benchmark';
+        const report = await api(endpoint, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload),
           signal: controller.signal,
         });
         if (benchmarkRequest !== controller || epoch !== indexEpoch) return;
-        renderBenchmark(report, tokenizer);
+        renderBenchmark(report, kind);
       } catch (error) {
         if (benchmarkRequest === controller && error.name !== 'AbortError') {
           status('benchmark-status', error.message, true);
@@ -493,6 +559,7 @@
           benchmarkRequest = null;
           button.disabled = !benchmarkReady;
           byId('benchmark-kind').disabled = false;
+          byId('benchmark-mode').disabled = false;
         }
       }
     });
@@ -501,8 +568,72 @@
       event.preventDefault();
       navigateSearch(byId('query').value.trim(), 1);
     });
+    byId('word-forms').addEventListener('change', () => navigateSearch(byId('query').value.trim(), 1));
     for (const button of byId('samples').querySelectorAll('button')) {
       button.addEventListener('click', () => navigateSearch(button.textContent, 1));
+    }
+
+    function svgElement(tag, attributes, text) {
+      const node = document.createElementNS('http://www.w3.org/2000/svg', tag);
+      for (const [name, value] of Object.entries(attributes)) node.setAttribute(name, value);
+      if (text !== undefined) node.textContent = text;
+      byId('zipf-chart').append(node);
+      return node;
+    }
+
+    function renderZipf(report) {
+      const points = report.points;
+      byId('zipf-chart').replaceChildren();
+      if (!points.length) {
+        status('analysis-status', `${report.index_name}: корпус пуст.`);
+        return;
+      }
+      const values = points.flatMap((p) => [p.frequency, p.zipf, p.mandelbrot]).filter((v) => v > 0);
+      const low = Math.floor(Math.log10(Math.min(...values)));
+      const high = Math.max(low + 1, Math.ceil(Math.log10(Math.max(...values))));
+      const xmax = Math.log10(Math.max(2, report.terms));
+      const x = (rank) => 70 + 660 * Math.log10(rank) / xmax;
+      const y = (value) => 345 - 315 * (Math.log10(value) - low) / (high - low);
+      for (let power = 0; power <= xmax; ++power) {
+        const at = x(10 ** power);
+        svgElement('line', {x1:at, x2:at, y1:30, y2:345, stroke:'#d9dfd5'});
+        svgElement('text', {x:at, y:367, 'text-anchor':'middle', 'font-size':12}, `10^${power}`);
+      }
+      for (let power = low; power <= high; ++power) {
+        const at = y(10 ** power);
+        svgElement('line', {x1:70, x2:730, y1:at, y2:at, stroke:'#d9dfd5'});
+        svgElement('text', {x:62, y:at + 4, 'text-anchor':'end', 'font-size':12}, `10^${power}`);
+      }
+      for (const [key, color] of [['frequency','#204b38'], ['zipf','#b06427'], ['mandelbrot','#466ca5']]) {
+        const line = points.filter((p) => p[key] > 0).map((p) => `${x(p.rank)},${y(p[key])}`).join(' ');
+        svgElement('polyline', {points:line, fill:'none', stroke:color, 'stroke-width':2});
+      }
+      svgElement('text', {x:400, y:395, 'text-anchor':'middle', 'font-size':13}, 'Ранг терма');
+      svgElement('text', {x:70, y:18, 'font-size':13}, 'Число вхождений');
+      const model = (name, m) => m
+        ? `${name}: C=${m.c.toPrecision(6)}, q=${number.format(m.q)}, s=${number.format(m.s)}, RMSE(log₁₀)=${number.format(m.log10_rmse)}`
+        : `${name}: недостаточно данных для подбора`;
+      byId('zipf-parameters').textContent = model('Ципф', report.zipf) + '. ' + model('Мандельброт', report.mandelbrot) + '.';
+      status('analysis-status', `${report.index_name} · ${number.format(report.terms)} термов · ` +
+        `${number.format(report.tokens)} вхождений. Подбор по всем рангам; на экране ${points.length} точек.`);
+      byId('analysis-results').hidden = false;
+    }
+
+    async function loadAnalysis() {
+      analysisRequest?.abort();
+      const controller = new AbortController();
+      analysisRequest = controller;
+      const epoch = indexEpoch;
+      byId('analysis-results').hidden = true;
+      status('analysis-status', 'Загрузка распределения…');
+      try {
+        const report = await api('/api/analysis/zipf', {signal:controller.signal});
+        if (analysisRequest !== controller || epoch !== indexEpoch) return;
+        if (!report.available) status('analysis-status', report.reason);
+        else renderZipf(report);
+      } catch (error) {
+        if (analysisRequest === controller && error.name !== 'AbortError') status('analysis-status', error.message, true);
+      }
     }
 
     const params = new URLSearchParams(location.search);
@@ -514,10 +645,18 @@
       byId('page-title').textContent = 'Замеры';
       byId('page-intro').textContent = 'Измерьте время поиска по индексу или токенизации исходного корпуса.';
       initBenchmark();
+    } else if (params.get('view') === 'analysis') {
+      byId('search-panel').hidden = true;
+      byId('analysis-panel').hidden = false;
+      byId('search-tab').removeAttribute('aria-current');
+      byId('analysis-tab').setAttribute('aria-current', 'page');
+      byId('page-title').textContent = 'Закон Ципфа';
+      byId('page-intro').textContent = 'Сравните частоты слов корпуса с двумя теоретическими моделями.';
+      loadAnalysis();
     } else {
       const readLocation = () => {
         const current = new URLSearchParams(location.search);
-        runSearch(current.get('q') || '', current.get('page') || '1');
+        runSearch(current.get('q') || '', current.get('page') || '1', current.get('mode') || 'stem');
       };
       window.addEventListener('popstate', readLocation);
       readLocation();

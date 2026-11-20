@@ -16,6 +16,7 @@ SearchIndex::SearchIndex(const userver::components::ComponentConfig& config,
       store_(config["index-path"].As<std::string>()),
       benchmark_queries_(LoadQueries(config["benchmark-queries-path"].As<std::string>())),
       tokenizer_corpus_path_(config["tokenizer-corpus-path"].As<std::string>("data/demo.tsv")),
+      quality_dataset_path_(config["quality-dataset-path"].As<std::string>("data/relevance-judgments.json")),
       frontend_(LoadFrontend(config["frontend-path"].As<std::string>())) {}
 
 userver::yaml_config::Schema SearchIndex::GetStaticConfigSchema() {
@@ -36,6 +37,9 @@ properties:
     frontend-path:
         type: string
         description: Path to the frontend HTML file
+    quality-dataset-path:
+        type: string
+        description: Judged top-20 pools bound to a binary index SHA-256
 )");
 }
 

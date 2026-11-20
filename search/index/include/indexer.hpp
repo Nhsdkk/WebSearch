@@ -1,6 +1,7 @@
 #ifndef WEBSEARCH_SEARCH_INDEX_INCLUDE_INDEXER_HPP_
 #define WEBSEARCH_SEARCH_INDEX_INCLUDE_INDEXER_HPP_
 
+#include <cstdint>
 #include <string>
 #include <vector>
 
@@ -25,18 +26,20 @@ class Indexer {
     struct Occurrence {
         std::string term;
         DocId doc = 0;
+        std::uint64_t count = 1;
     };
 
     struct Corpus {
         std::vector<Document> documents;
         std::vector<Occurrence> occurrences;
         Statistics statistics;
+        std::vector<std::uint64_t> frequencies;
     };
 
     Corpus ReadCorpus(const std::string& path) const;
     void AddDocument(SourceDocument document, Corpus& corpus) const;
     std::vector<Occurrence> CollectTerms(const SourceDocument& document, DocId id, Statistics& statistics) const;
-    std::vector<Term> BuildTerms(std::vector<Occurrence>& occurrences, Statistics& statistics) const;
+    std::vector<Term> BuildTerms(Corpus& corpus) const;
 
     static bool Before(const Occurrence& a, const Occurrence& b);
     static void MergeSort(std::vector<Occurrence>& values);

@@ -36,6 +36,9 @@ components_manager:
       tokenizer-corpus-path#env: TOKENIZER_CORPUS
       tokenizer-corpus-path#fallback: data/demo.tsv
       frontend-path: service/frontend/index.html
+      quality-dataset-path: $quality-dataset
+      quality-dataset-path#env: SEARCH_QUALITY_DATASET
+      quality-dataset-path#fallback: data/relevance-judgments.json
     handler-frontend:
       path: /
       method: GET
@@ -59,6 +62,15 @@ components_manager:
       max_request_size: 131072
     handler-tokenization-benchmark:
       path: /api/benchmark/tokenizer
+      method: GET,POST
+      task_processor: benchmark-task-processor
+      max_requests_in_flight: 1
+      max_request_size: 1024
+    handler-zipf:
+      path: /api/analysis/zipf
+      method: GET
+    handler-quality:
+      path: /api/benchmark/quality
       method: GET,POST
       task_processor: benchmark-task-processor
       max_requests_in_flight: 1

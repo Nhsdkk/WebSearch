@@ -15,7 +15,8 @@ namespace boolsearch {
 // index.
 class BooleanSearch::Parser {
    public:
-    Parser(const indexing::Index& index, const std::string& query) : index_(index), tokens_(Lex(query)) {}
+    Parser(const indexing::Index& index, const StemIndex& stems, const std::string& query, MatchMode mode)
+        : index_(index), stems_(stems), mode_(mode), tokens_(Lex(query)) {}
 
     Parser(const Parser&) = delete;
     Parser& operator=(const Parser&) = delete;
@@ -48,6 +49,8 @@ class BooleanSearch::Parser {
     indexing::DocList ParseUnary(unsigned depth);
 
     const indexing::Index& index_;
+    const StemIndex& stems_;
+    MatchMode mode_;
     indexing::Tokenizer tokenizer_;
     std::vector<Token> tokens_;
     std::size_t cursor_ = 0;

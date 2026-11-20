@@ -21,9 +21,9 @@ class SearchCliTest : public ::testing::Test {
         indexing::IndexSaver{}.Save(indexing::Indexer{}.Build(corpus.string()), files_.Path("index.bin").string());
     }
 
-    int Run(const std::string& queries) {
+    int Run(const std::string& queries, boolsearch::MatchMode mode = boolsearch::MatchMode::kStem) {
         std::istringstream input(queries);
-        return boolsearch::SearchCli{}.Run(files_.Path("index.bin").string(), input, output_, errors_);
+        return boolsearch::SearchCli{}.Run(files_.Path("index.bin").string(), input, output_, errors_, mode);
     }
 
     std::string Results() const {
@@ -40,10 +40,10 @@ TEST_F(SearchCliTest, ProcessesCrLfBlankLinesAndFinalLineWithoutNewline) {
     EXPECT_EQ(Results(),
               "{\"query\":\"cat\",\"total\":1,\"elapsed_ms\":0,\"results\":["
               "{\"id\":0,\"title\":\"Кот\\u0009\\\"А\\\"\\u000aстрока\","
-              "\"url\":\"https://example.test/0\"}]}\n"
-              "{\"query\":\"\",\"total\":0,\"elapsed_ms\":0,\"results\":[]}\n"
+              "\"url\":\"https://example.test/0\"}],\"mode\":\"stem\"}\n"
+              "{\"query\":\"\",\"total\":0,\"elapsed_ms\":0,\"results\":[],\"mode\":\"stem\"}\n"
               "{\"query\":\"dog\",\"total\":1,\"elapsed_ms\":0,\"results\":["
-              "{\"id\":1,\"title\":\"Пёс\",\"url\":\"https://example.test/1\"}]}\n");
+              "{\"id\":1,\"title\":\"Пёс\",\"url\":\"https://example.test/1\"}],\"mode\":\"stem\"}\n");
     EXPECT_TRUE(errors_.str().empty());
 }
 
@@ -89,6 +89,16 @@ TEST_F(SearchCliTest, ReportsStartupAndStreamFailures) {
     EXPECT_EQ(cli.Run(files_.Path("index.bin").string(), input, output_, errors_), 1);
     output_.setstate(std::ios::badbit);
     EXPECT_EQ(Run("cat\n"), 1);
+}
+
+TEST_F(SearchCliTest, DefaultsToStemmingAndCanSelectExactForm) {
+    ASSERT_EQ(Run("коты\n"), 0);
+    EXPECT_NE(output_.str().find("\"total\":1"), std::string::npos);
+    EXPECT_NE(output_.str().find("\"mode\":\"stem\""), std::string::npos);
+    output_.str("");
+    ASSERT_EQ(Run("коты\n", boolsearch::MatchMode::kExact), 0);
+    EXPECT_NE(output_.str().find("\"total\":0"), std::string::npos);
+    EXPECT_NE(output_.str().find("\"mode\":\"exact\""), std::string::npos);
 }
 
 }  // namespace

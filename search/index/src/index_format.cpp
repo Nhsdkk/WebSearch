@@ -288,6 +288,28 @@ std::ostream& operator<<(std::ostream& output, const IndexFormat::IndexingRecord
     return output;
 }
 
+void IndexFormat::FrequencyRecord::Validate(std::uint64_t document_frequency, std::uint64_t token_count) const {
+    if (count == 0 || count < document_frequency || count > token_count) {
+        throw std::runtime_error("Invalid collection frequency");
+    }
+}
+
+void IndexFormat::FrequencyRecord::ValidateTotal(std::uint64_t sum, std::uint64_t token_count) {
+    if (sum != token_count) {
+        throw std::runtime_error("Collection frequencies do not sum to token count");
+    }
+}
+
+std::istream& operator>>(std::istream& input, IndexFormat::FrequencyRecord& record) {
+    ReadUint(input, record.count);
+    return input;
+}
+
+std::ostream& operator<<(std::ostream& output, const IndexFormat::FrequencyRecord& record) {
+    WriteUint(output, record.count);
+    return output;
+}
+
 IndexFormat::Section IndexFormat::FindSection(const std::vector<Section>& sections, std::uint32_t type) {
     for (const auto& section : sections) {
         if (section.type == type) {

@@ -3,6 +3,7 @@
 /CMakeUserPresets.json
 /data/*.bin
 /data/corpus.tsv
+/data/zipf-frequencies.tsv
 /data/*.tmp
 /data/results*.jsonl
 __pycache__/

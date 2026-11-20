@@ -1,0 +1,5 @@
+add_library(search_analysis STATIC src/zipf_analysis.cpp src/search_quality.cpp)
+target_include_directories(search_analysis PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include")
+target_link_libraries(search_analysis PUBLIC boolean_search_core search_common)
+target_compile_features(search_analysis PUBLIC cxx_std_17)
+target_compile_options(search_analysis PRIVATE -Wall -Wextra -Wpedantic)

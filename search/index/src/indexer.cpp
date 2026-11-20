@@ -20,9 +20,9 @@ Index Indexer::Build(const std::string& corpus_path) const {
 
     corpus.occurrences.shrink_to_fit();
     MergeSort(corpus.occurrences);
-    auto terms = BuildTerms(corpus.occurrences, corpus.statistics);
+    auto terms = BuildTerms(corpus);
 
-    return Index(std::move(corpus.documents), std::move(terms), corpus.statistics);
+    return Index(std::move(corpus.documents), std::move(terms), corpus.statistics, std::move(corpus.frequencies));
 }
 
 Indexer::Corpus Indexer::ReadCorpus(const std::string& path) const {
@@ -53,6 +53,8 @@ void Indexer::AddDocument(SourceDocument document, Corpus& corpus) const {
         if (corpus.occurrences.empty() || corpus.occurrences.back().doc != id ||
             corpus.occurrences.back().term != term.term) {
             corpus.occurrences.push_back(std::move(term));
+        } else {
+            corpus.occurrences.back().count = CheckedArithmetic::Add(corpus.occurrences.back().count, term.count);
         }
     }
     corpus.documents.push_back({std::move(document.title), std::move(document.url)});
@@ -77,15 +79,19 @@ std::vector<Indexer::Occurrence> Indexer::CollectTerms(const SourceDocument& doc
     return terms;
 }
 
-std::vector<Term> Indexer::BuildTerms(std::vector<Occurrence>& occurrences, Statistics& statistics) const {
+std::vector<Term> Indexer::BuildTerms(Corpus& corpus) const {
     std::vector<Term> terms;
-    for (auto& occurrence : occurrences) {
+    for (auto& occurrence : corpus.occurrences) {
         if (terms.empty() || terms.back().text != occurrence.term) {
-            statistics.term_characters =
-                CheckedArithmetic::Add(statistics.term_characters, tokenizer_.Utf8Length(occurrence.term));
+            corpus.statistics.term_characters =
+                CheckedArithmetic::Add(corpus.statistics.term_characters, tokenizer_.Utf8Length(occurrence.term));
             terms.push_back({std::move(occurrence.term), {occurrence.doc}});
-        } else if (terms.back().postings.back() != occurrence.doc) {
-            terms.back().postings.push_back(occurrence.doc);
+            corpus.frequencies.push_back(occurrence.count);
+        } else {
+            if (terms.back().postings.back() != occurrence.doc) {
+                terms.back().postings.push_back(occurrence.doc);
+            }
+            corpus.frequencies.back() = CheckedArithmetic::Add(corpus.frequencies.back(), occurrence.count);
         }
     }
     return terms;

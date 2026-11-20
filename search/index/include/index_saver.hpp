@@ -33,6 +33,7 @@ class IndexSaver {
     static void WriteTerms(std::ostream& out, const std::vector<Term>& terms);
     static void WritePostings(std::ostream& out, const std::vector<Term>& terms);
     static void WriteStatistics(std::ostream& out, const Statistics& statistics);
+    static void WriteFrequencies(std::ostream& out, const Index& index);
 };
 }  // namespace indexing
 

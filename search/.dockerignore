@@ -4,5 +4,6 @@
 /.idea/
 /data/*.bin
 /data/corpus.tsv
+/data/zipf-frequencies.tsv*
 /data/results*.jsonl
 **/__pycache__/

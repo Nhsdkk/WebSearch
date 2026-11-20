@@ -79,6 +79,24 @@ class FrontendHandler final : public IndexHandler {
                               userver::server::request::RequestContext&) const override;
 };
 
+class ZipfHandler final : public IndexHandler {
+   public:
+    static constexpr std::string_view kName = "handler-zipf";
+    using IndexHandler::IndexHandler;
+
+    std::string HandleRequest(userver::server::http::HttpRequest& request,
+                              userver::server::request::RequestContext&) const override;
+};
+
+class QualityHandler final : public IndexHandler {
+   public:
+    static constexpr std::string_view kName = "handler-quality";
+    using IndexHandler::IndexHandler;
+
+    std::string HandleRequest(userver::server::http::HttpRequest& request,
+                              userver::server::request::RequestContext&) const override;
+};
+
 }  // namespace search_web
 
 #endif  // WEBSEARCH_SEARCH_SERVICE_SRC_HANDLERS_HPP_

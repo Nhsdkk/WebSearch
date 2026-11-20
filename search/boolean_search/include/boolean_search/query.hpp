@@ -4,6 +4,8 @@
 #include <cstddef>
 #include <string>
 
+#include "boolean_search/match_mode.hpp"
+#include "boolean_search/stem_index.hpp"
 #include "index.hpp"
 
 namespace boolsearch {
@@ -23,7 +25,8 @@ class BooleanSearch {
 
     // Returns matching IDs in ascending order. An empty query has no matches.
     // Throws std::runtime_error for invalid syntax, UTF-8, or query limits.
-    indexing::DocList Search(const std::string& query) const;
+    indexing::DocList Search(const std::string& query, MatchMode mode = MatchMode::kStem) const;
+    std::size_t stem_count() const { return stems_.size(); }
 
    private:
     class Parser;
@@ -33,6 +36,7 @@ class BooleanSearch {
     static indexing::DocList Complement(const indexing::DocList& values, std::size_t document_count);
 
     const indexing::Index& index_;
+    StemIndex stems_;
 };
 }  // namespace boolsearch
 

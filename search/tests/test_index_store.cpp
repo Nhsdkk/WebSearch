@@ -91,4 +91,21 @@ TEST_F(IndexStoreTest, ConcurrentReadersObserveCompleteSnapshots) {
     }
 }
 
+TEST_F(IndexStoreTest, RetainsStemLookupAndAnalysisWithItsOriginalSnapshot) {
+    const auto index =
+        indexing::Indexer{}.Build(files_.Write("forms.tsv", "Forms\thttps://test/forms\tмашины\n").string());
+    indexing::IndexSaver{}.Save(index, files_.Path("forms.bin").string());
+    search_web::IndexStore store(files_.Path("forms.bin").string());
+    const auto previous = store.Snapshot();
+    EXPECT_EQ(previous->Search("машина"), (indexing::DocList{0}));
+    EXPECT_TRUE(previous->Search("машина", boolsearch::MatchMode::kExact).empty());
+    EXPECT_TRUE(previous->zipf().available);
+    const auto sha256 = previous->sha256();
+    store.LoadUpload(files_.Read("second.bin"), "other.bin");
+    EXPECT_EQ(previous->sha256(), sha256);
+    EXPECT_NE(store.Snapshot()->sha256(), sha256);
+    EXPECT_EQ(previous->Search("машина"), (indexing::DocList{0}));
+    EXPECT_TRUE(store.Snapshot()->Search("машина").empty());
+}
+
 }  // namespace

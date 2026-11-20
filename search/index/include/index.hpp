@@ -46,7 +46,8 @@ struct Statistics {
 class Index {
    public:
     Index() = default;
-    Index(std::vector<Document> documents, std::vector<Term> terms, const Statistics& statistics);
+    Index(std::vector<Document> documents, std::vector<Term> terms, const Statistics& statistics,
+          std::optional<std::vector<std::uint64_t>> frequencies = std::nullopt);
 
     Index(const Index&) = default;
     Index& operator=(const Index&) = default;
@@ -56,6 +57,7 @@ class Index {
     const std::vector<Document>& documents() const { return documents_; }
     const std::vector<Term>& terms() const { return terms_; }
     const Statistics& statistics() const { return statistics_; }
+    const std::optional<std::vector<std::uint64_t>>& frequencies() const { return frequencies_; }
 
     // Returns postings for a normalized term, or an empty list if it is absent.
     // The reference remains valid until the index is replaced or destroyed.
@@ -65,6 +67,7 @@ class Index {
     std::vector<Document> documents_;
     std::vector<Term> terms_;
     Statistics statistics_;
+    std::optional<std::vector<std::uint64_t>> frequencies_;
     DocList empty_postings_;
 };
 }  // namespace indexing

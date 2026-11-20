@@ -29,6 +29,7 @@ struct IndexLoader::Directory {
     IndexFormat::Section postings;
     IndexFormat::Section statistics;
     std::optional<IndexFormat::Section> indexing;
+    std::optional<IndexFormat::Section> frequencies;
 
     void Validate(const Header& header) const {
         const bool valid_documents = documents.count == header.document_count &&
@@ -43,6 +44,11 @@ struct IndexLoader::Directory {
         }
         if (indexing && (indexing->size != IndexFormat::IndexingRecord::kSize || indexing->count != 1)) {
             throw std::runtime_error("Invalid indexing statistics section");
+        }
+        if (frequencies && (header.minor_version < 2 || frequencies->count != header.term_count ||
+                            frequencies->size % IndexFormat::FrequencyRecord::kSize != 0 ||
+                            frequencies->count != frequencies->size / IndexFormat::FrequencyRecord::kSize)) {
+            throw std::runtime_error("Invalid collection frequency section");
         }
     }
 };
@@ -70,7 +76,8 @@ Index IndexLoader::Load(const std::string& path) const {
     auto terms = ReadTerms(input, directory, term_characters);
     const auto statistics = ReadStatistics(input, directory, term_characters);
 
-    return Index(std::move(documents), std::move(terms), statistics);
+    auto frequencies = ReadFrequencies(input, directory, terms, statistics.token_count);
+    return Index(std::move(documents), std::move(terms), statistics, std::move(frequencies));
 }
 
 IndexLoader::Directory IndexLoader::ReadDirectory(std::istream& input, const Header& header) {
@@ -88,11 +95,17 @@ IndexLoader::Directory IndexLoader::ReadDirectory(std::istream& input, const Hea
         sections.push_back(section);
     }
 
-    Directory directory{IndexFormat::FindSection(sections, 1), IndexFormat::FindSection(sections, 2),
-                        IndexFormat::FindSection(sections, 3), IndexFormat::FindSection(sections, 4), std::nullopt};
+    Directory directory{IndexFormat::FindSection(sections, 1),
+                        IndexFormat::FindSection(sections, 2),
+                        IndexFormat::FindSection(sections, 3),
+                        IndexFormat::FindSection(sections, 4),
+                        std::nullopt,
+                        std::nullopt};
     for (const auto& section : sections) {
         if (section.type == 5) {
             directory.indexing = section;
+        } else if (section.type == 6) {
+            directory.frequencies = section;
         }
     }
     directory.Validate(header);
@@ -169,6 +182,27 @@ DocList IndexLoader::ReadPostings(std::istream& input, std::uint64_t document_co
         previous_id = record.document_id;
     }
     return postings;
+}
+
+std::optional<std::vector<std::uint64_t>> IndexLoader::ReadFrequencies(std::istream& input, const Directory& directory,
+                                                                       const std::vector<Term>& terms,
+                                                                       std::uint64_t token_count) {
+    if (!directory.frequencies) {
+        return std::nullopt;
+    }
+    input.seekg(static_cast<std::streamoff>(directory.frequencies->offset));
+    std::vector<std::uint64_t> counts;
+    counts.reserve(terms.size());
+    std::uint64_t total = 0;
+    for (const auto& term : terms) {
+        IndexFormat::FrequencyRecord record;
+        input >> record;
+        record.Validate(term.postings.size(), token_count);
+        total = CheckedArithmetic::Add(total, record.count);
+        counts.push_back(record.count);
+    }
+    IndexFormat::FrequencyRecord::ValidateTotal(total, token_count);
+    return counts;
 }
 
 Statistics IndexLoader::ReadStatistics(std::istream& input, const Directory& directory, std::uint64_t term_characters) {

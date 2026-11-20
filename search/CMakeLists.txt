@@ -9,8 +9,11 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}")
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}")
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}")
 
+add_subdirectory(common modules/common)
 add_subdirectory(index modules/index)
+add_subdirectory(morphology modules/morphology)
 add_subdirectory(boolean_search modules/boolean_search)
+add_subdirectory(analysis modules/analysis)
 
 set(SEARCH_BUILD_WEB AUTO CACHE STRING "Build the userver search service (AUTO, ON, or OFF)")
 set_property(CACHE SEARCH_BUILD_WEB PROPERTY STRINGS AUTO ON OFF)

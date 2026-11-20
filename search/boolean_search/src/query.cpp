@@ -12,9 +12,11 @@ using indexing::DocId;
 using indexing::DocList;
 using indexing::Index;
 
-BooleanSearch::BooleanSearch(const Index& index) : index_(index) {}
+BooleanSearch::BooleanSearch(const Index& index) : index_(index), stems_(index) {}
 
-DocList BooleanSearch::Search(const std::string& query) const { return Parser(index_, query).Run(); }
+DocList BooleanSearch::Search(const std::string& query, MatchMode mode) const {
+    return Parser(index_, stems_, query, mode).Run();
+}
 
 DocList BooleanSearch::Intersect(const DocList& a, const DocList& b) {
     DocList result;

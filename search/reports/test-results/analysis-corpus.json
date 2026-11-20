@@ -1,0 +1,42 @@
+{
+  "date": "2026-11-20",
+  "legacy_version": "1.1",
+  "legacy_stemming_works": true,
+  "legacy_analysis_available": false,
+  "current_version": "1.2",
+  "upload_bytes": 103489660,
+  "statistics": {
+    "index_name": "corpus.bin",
+    "index_sha256": "cbd151d60081b2185cd9c70aac5ddbf5d004d57391862c6dd3efffbd124f733b",
+    "stem_terms": 199448,
+    "has_frequencies": true,
+    "documents": 82889,
+    "terms": 512740,
+    "index_bytes": 103489660,
+    "text_bytes": 314686487,
+    "tokens": 23755935,
+    "average_term_characters": 9.209164488824745,
+    "average_token_characters": 6.021506246754758,
+    "load_ms": 1597.455458,
+    "build_ms": 22682.82725,
+    "write_ms": 676.276625,
+    "total_seconds": 23.359103875,
+    "ms_per_document": 0.2818118673768533,
+    "ms_per_kib": 0.07601127902260384,
+    "documents_per_second": 3548.46660400837,
+    "kib_per_second": 13155.94228723115
+  },
+  "zipf_available": true,
+  "chart_points": 1387,
+  "quality_queries": 16,
+  "quality_dataset_sha_matches": true,
+  "invalid_upload_preserves_snapshot": true,
+  "cli_modes_counts_and_top20_match_api": true,
+  "browser_verified": [
+    "logarithmic chart",
+    "quality table",
+    "word-form search: 345 hits",
+    "exact form: 0 hits",
+    "mode preserved in pagination URL"
+  ]
+}

@@ -18,6 +18,7 @@
 #include <string_view>
 #include <thread>
 #include <userver/formats/json/serialize.hpp>
+#include <userver/formats/json/value_builder.hpp>
 #include <userver/formats/parse/common_containers.hpp>
 #include <userver/formats/yaml/serialize.hpp>
 #include <userver/formats/yaml/value_builder.hpp>
@@ -162,6 +163,9 @@ class WebApiTest : public ::testing::Test {
         search_index.Remove("tokenizer-corpus-path#env");
         search_index.Remove("tokenizer-corpus-path#fallback");
         search_index["tokenizer-corpus-path"] = input.string();
+        search_index.Remove("quality-dataset-path#env");
+        search_index.Remove("quality-dataset-path#fallback");
+        search_index["quality-dataset-path"] = files_.Path("quality.json").string();
         search_index["benchmark-queries-path"] = files_.Write("queries.txt", "машина\n!машина\n").string();
         search_index["frontend-path"] = source + "/service/frontend/index.html";
 
@@ -174,7 +178,29 @@ class WebApiTest : public ::testing::Test {
             if (const auto status = server_->WaitFor(0ms)) {
                 FAIL() << "Service exited with status " << *status << '\n' << files_.Read("server.log");
             }
-            if (http_.Request("/api/stats").status == 200) {
+            const auto ready = http_.Request("/api/stats");
+            if (ready.status == 200) {
+                json::ValueBuilder dataset(json::Type::kObject);
+                dataset["index_sha256"] = ready.Json()["index_sha256"].As<std::string>();
+                json::ValueBuilder sample(json::Type::kObject);
+                sample["id"] = "q1";
+                sample["query"] = "машина";
+                sample["intent"] = "Vehicle documents";
+                sample["category"] = "fixture";
+                json::ValueBuilder judgments(json::Type::kArray);
+                for (int i = 0; i < 20; ++i) {
+                    json::ValueBuilder judgment(json::Type::kObject);
+                    judgment["document_id"] = i;
+                    judgment["url"] = "https://example.test/" + std::to_string(i);
+                    judgment["relevant"] = true;
+                    judgment["reason"] = "Vehicle text";
+                    judgments.PushBack(std::move(judgment));
+                }
+                sample["judgments"] = std::move(judgments);
+                json::ValueBuilder queries(json::Type::kArray);
+                queries.PushBack(std::move(sample));
+                dataset["queries"] = std::move(queries);
+                files_.Write("quality.json", json::ToString(dataset.ExtractValue()));
                 return;
             }
             std::this_thread::sleep_for(50ms);
@@ -431,6 +457,66 @@ TEST_F(WebApiTest, AcceptsIndexWithoutTimings) {
     EXPECT_TRUE(response.Json()["total_seconds"].IsNull());
     EXPECT_EQ(response.Json()["documents"].As<int>(), 5);
     EXPECT_EQ(http_.Search("!несуществующийтерм").Json()["total"].As<int>(), 5);
+}
+
+TEST_F(WebApiTest, ExposesRankedCollectionFrequenciesAndDownloads) {
+    const auto response = http_.Request("/api/analysis/zipf");
+    ASSERT_EQ(response.status, 200);
+    const auto report = response.Json();
+    EXPECT_TRUE(report["available"].As<bool>());
+    EXPECT_EQ(report["frequency_kind"].As<std::string>(), "collection_frequency");
+    EXPECT_EQ(report["points"].GetSize(), report["terms"].As<std::size_t>());
+    EXPECT_EQ(report["points"][0]["frequency"].As<int>(), 55);
+    EXPECT_TRUE(report["zipf"].IsObject());
+    EXPECT_TRUE(report["mandelbrot"].IsObject());
+    const auto table = http_.Request("/api/analysis/zipf?format=tsv");
+    ASSERT_EQ(table.status, 200);
+    EXPECT_EQ(table.body.find("rank\tterm\tfrequency\tzipf\tmandelbrot\n"), 0);
+    EXPECT_EQ(http_.Request("/api/analysis/zipf?format=other").status, 400);
+}
+
+TEST_F(WebApiTest, SearchesAndBenchmarksSelectedWordFormMode) {
+    const auto path = files_.Write("forms.tsv", "Forms\thttps://example.test/forms\tмашины\n");
+    TestProcess indexer({SEARCH_INDEXER_EXECUTABLE, path.string(), files_.Path("forms.bin").string()},
+                        files_.Path("forms.log"));
+    ASSERT_EQ(indexer.WaitFor(5s), 0);
+    ASSERT_EQ(http_.Upload(files_.Read("forms.bin")).status, 200);
+    EXPECT_EQ(http_.Search("машина").Json()["total"].As<int>(), 1);
+    const auto exact = http_.Request("/api/search?q=%D0%BC%D0%B0%D1%88%D0%B8%D0%BD%D0%B0&mode=exact");
+    ASSERT_EQ(exact.status, 200);
+    EXPECT_EQ(exact.Json()["total"].As<int>(), 0);
+    EXPECT_EQ(exact.Json()["mode"].As<std::string>(), "exact");
+    EXPECT_EQ(http_.Request("/api/search?mode=other").status, 400);
+    const auto benchmark = http_.Request("/api/benchmark", R"({"queries":["машина"],"mode":"exact","repetitions":1})");
+    ASSERT_EQ(benchmark.status, 200);
+    EXPECT_EQ(benchmark.Json()["queries"][0]["hits"].As<int>(), 0);
+    EXPECT_EQ(benchmark.Json()["mode"].As<std::string>(), "exact");
+    EXPECT_EQ(http_.Request("/api/benchmark", R"({"mode":"other"})").status, 400);
+    EXPECT_FALSE(http_.Request("/api/benchmark/quality").Json()["available"].As<bool>());
+}
+
+TEST_F(WebApiTest, EvaluatesJudgedPoolsAndRejectsMismatchedDataset) {
+    const auto config = http_.Request("/api/benchmark/quality");
+    ASSERT_EQ(config.status, 200);
+    EXPECT_TRUE(config.Json()["available"].As<bool>());
+    EXPECT_EQ(config.Json()["repetitions"].As<int>(), 3);
+    const auto response = http_.Request("/api/benchmark/quality", R"({"repetitions":1})");
+    ASSERT_EQ(response.status, 200);
+    const auto report = response.Json();
+    EXPECT_EQ(report["queries"].GetSize(), 1);
+    EXPECT_DOUBLE_EQ(report["macro"]["exact_p_at20"].As<double>(), 1);
+    EXPECT_DOUBLE_EQ(report["macro"]["stem_pool_recall_at20"].As<double>(), 1);
+    for (const auto* payload : {"[]", "{bad", R"({"repetitions":0})", R"({"repetitions":101})"}) {
+        EXPECT_EQ(http_.Request("/api/benchmark/quality", payload).status, 400);
+    }
+    auto bytes = files_.Read("quality.json");
+    const auto hash = http_.Request("/api/stats").Json()["index_sha256"].As<std::string>();
+    bytes.replace(bytes.find(hash), hash.size(), "wrong");
+    files_.Write("quality.json", bytes);
+    EXPECT_FALSE(http_.Request("/api/benchmark/quality").Json()["available"].As<bool>());
+    const auto bad = http_.Request("/api/benchmark/quality", "{}");
+    EXPECT_EQ(bad.status, 400);
+    EXPECT_TRUE(bad.Json().HasMember("error"));
 }
 
 }  // namespace

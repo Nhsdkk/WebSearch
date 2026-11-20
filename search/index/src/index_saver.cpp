@@ -49,15 +49,20 @@ std::optional<IndexingTimings> IndexSaver::Save(const Index& index, const std::s
         IndexFormat::IndexingRecord record{timings->build_nanoseconds, timings->write_nanoseconds};
         record.Validate();
         output << record;
-        if (build_nanoseconds) {
-            output.flush();
-            const auto elapsed = std::chrono::steady_clock::now() - start;
-            record.write_nanoseconds = std::chrono::duration_cast<std::chrono::nanoseconds>(elapsed).count();
-            record.Validate();
-            timings->write_nanoseconds = record.write_nanoseconds;
-            output.seekp(static_cast<std::streamoff>(layout.sections.back().offset));
-            output << record;
-        }
+    }
+
+    if (index.frequencies()) {
+        output.seekp(static_cast<std::streamoff>(IndexFormat::FindSection(layout.sections, 6).offset));
+        WriteFrequencies(output, index);
+    }
+    if (build_nanoseconds) {
+        output.flush();
+        const auto elapsed = std::chrono::steady_clock::now() - start;
+        timings->write_nanoseconds = std::chrono::duration_cast<std::chrono::nanoseconds>(elapsed).count();
+        const IndexFormat::IndexingRecord record{timings->build_nanoseconds, timings->write_nanoseconds};
+        record.Validate();
+        output.seekp(static_cast<std::streamoff>(IndexFormat::FindSection(layout.sections, 5).offset));
+        output << record;
     }
 
     output.close();
@@ -94,6 +99,13 @@ IndexSaver::Layout IndexSaver::CalculateLayout(const Index& index, bool include_
         header.minor_version = 1;
         ++header.section_count;
     }
+    if (index.frequencies()) {
+        if (index.frequencies()->size() != index.terms().size()) {
+            throw std::runtime_error("Frequency count mismatch");
+        }
+        header.minor_version = 2;
+        ++header.section_count;
+    }
 
     const auto docs_offset = header.directory_offset + header.section_count * IndexFormat::Section::kSize;
     const auto terms_offset = CheckedArithmetic::Add(docs_offset, docs_size);
@@ -110,6 +122,15 @@ IndexSaver::Layout IndexSaver::CalculateLayout(const Index& index, bool include_
     if (include_indexing) {
         layout.sections.push_back({5, 0, header.file_size, IndexFormat::IndexingRecord::kSize, 1});
         layout.header.file_size = CheckedArithmetic::Add(header.file_size, IndexFormat::IndexingRecord::kSize);
+    }
+    if (index.frequencies()) {
+        const auto size = CheckedArithmetic::Add(0, index.terms().size());
+        if (size > std::numeric_limits<std::uint64_t>::max() / IndexFormat::FrequencyRecord::kSize) {
+            throw std::runtime_error("Frequency size overflow");
+        }
+        layout.sections.push_back({6, 0, layout.header.file_size, size * IndexFormat::FrequencyRecord::kSize, size});
+        layout.header.file_size =
+            CheckedArithmetic::Add(layout.header.file_size, size * IndexFormat::FrequencyRecord::kSize);
     }
     return layout;
 }
@@ -149,5 +170,16 @@ void IndexSaver::WriteStatistics(std::ostream& out, const Statistics& statistics
     const IndexFormat::StatisticsRecord record{statistics.text_bytes, statistics.token_count,
                                                statistics.token_characters, statistics.term_characters};
     out << record;
+}
+
+void IndexSaver::WriteFrequencies(std::ostream& out, const Index& index) {
+    std::uint64_t total = 0;
+    for (std::size_t i = 0; i < index.terms().size(); ++i) {
+        const IndexFormat::FrequencyRecord record{index.frequencies()->at(i)};
+        record.Validate(index.terms()[i].postings.size(), index.statistics().token_count);
+        total = CheckedArithmetic::Add(total, record.count);
+        out << record;
+    }
+    IndexFormat::FrequencyRecord::ValidateTotal(total, index.statistics().token_count);
 }
 }  // namespace indexing

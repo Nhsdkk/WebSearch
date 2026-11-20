@@ -1,6 +1,7 @@
 #include "index.hpp"
 
 #include <cstddef>
+#include <optional>
 #include <string>
 #include <utility>
 #include <vector>
@@ -28,8 +29,12 @@ double IndexingTimings::KibPerSecond(std::uint64_t text_bytes) const {
     return seconds == 0 ? 0.0 : static_cast<double>(text_bytes) / 1024.0 / seconds;
 }
 
-Index::Index(std::vector<Document> documents, std::vector<Term> terms, const Statistics& statistics)
-    : documents_(std::move(documents)), terms_(std::move(terms)), statistics_(statistics) {}
+Index::Index(std::vector<Document> documents, std::vector<Term> terms, const Statistics& statistics,
+             std::optional<std::vector<std::uint64_t>> frequencies)
+    : documents_(std::move(documents)),
+      terms_(std::move(terms)),
+      statistics_(statistics),
+      frequencies_(std::move(frequencies)) {}
 
 const DocList& Index::Lookup(const std::string& term) const {
     std::size_t left = 0;

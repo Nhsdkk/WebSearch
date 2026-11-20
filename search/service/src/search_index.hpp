@@ -27,6 +27,7 @@ class SearchIndex final : public userver::components::ComponentBase {
     std::shared_ptr<const IndexSnapshot> LoadUpload(std::string_view bytes, std::string name);
     const std::vector<std::string>& benchmark_queries() const { return benchmark_queries_; }
     const std::string& tokenizer_corpus_path() const { return tokenizer_corpus_path_; }
+    const std::string& quality_dataset_path() const { return quality_dataset_path_; }
     const std::string& frontend() const { return frontend_; }
 
    private:
@@ -36,6 +37,7 @@ class SearchIndex final : public userver::components::ComponentBase {
     IndexStore store_;
     const std::vector<std::string> benchmark_queries_;
     const std::string tokenizer_corpus_path_;
+    const std::string quality_dataset_path_;
     const std::string frontend_;
 };
 

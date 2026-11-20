@@ -88,7 +88,8 @@ DocList BooleanSearch::Parser::ParseUnary(unsigned depth) {
 
     DocList result;
     if (current() == Kind::kWord) {
-        result = index_.Lookup(tokens_[cursor_++].word);
+        const auto& word = tokens_[cursor_++].word;
+        result = mode_ == MatchMode::kStem ? stems_.Lookup(word) : index_.Lookup(word);
     } else if (current() == Kind::kOpen) {
         if (depth >= 128) {
             Fail("Parentheses nesting exceeds 128 levels");

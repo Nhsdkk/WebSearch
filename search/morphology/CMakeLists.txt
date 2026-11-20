@@ -1,0 +1,6 @@
+add_library(search_morphology STATIC src/russian_stemmer.cpp)
+target_include_directories(search_morphology PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include")
+target_include_directories(search_morphology SYSTEM PRIVATE "${UTF8PROC_INCLUDE_DIR}")
+target_link_libraries(search_morphology PRIVATE "${UTF8PROC_LIBRARY}")
+target_compile_features(search_morphology PUBLIC cxx_std_17)
+target_compile_options(search_morphology PRIVATE -Wall -Wextra -Wpedantic)
